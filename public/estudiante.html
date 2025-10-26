@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel del Estudiante</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🎓 Panel del Estudiante (Subscriber)</h1>
+  </header>
+
+  <main>
+    <div id="notificaciones">
+      <p class="esperando">Esperando notificaciones en tiempo real...</p>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const notificaciones = document.getElementById("notificaciones");
+
+    socket.on("nueva-tarea", (data) => {
+      const p = document.createElement("p");
+      p.className = "notificacion";
+      p.innerHTML = `🆕 ${data.mensaje} <br><small>${data.fecha}</small>`;
+      notificaciones.appendChild(p);
+    });
+  </script>
+</body>
+</html>

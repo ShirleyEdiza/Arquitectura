@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Iniciar Sesión - Pub/Sub Educativo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>🎓 Sistema Educativo Pub/Sub</h1>
+    <p>Inicia sesión para continuar</p>
+
+    <input type="email" id="email" placeholder="Correo electrónico">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button id="btnLogin">Ingresar</button>
+
+    <p class="hint">Docente: docente@uni.com | Estudiante: estudiante@uni.com | Contraseña: 12345</p>
+  </div>
+
+  <script>
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      // Limpiar espacios antes y después de los valores
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      console.log("Enviando:", email, password); // depuración
+
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        alert("Credenciales incorrectas");
+        return;
+      }
+
+      const data = await response.json();
+      if (data.rol === "docente") window.location.href = "docente.html";
+      else window.location.href = "estudiante.html";
+    });
+  </script>
+</body>
+</html>
