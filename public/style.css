@@ -400,3 +400,266 @@ input[type="text"], input[type="url"], input[type="datetime-local"], select, tex
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- AÑADIR AL INICIO DE style.css --- */
+
+/* --- Estilos para el Nuevo Header (Basado en Estudiante) --- */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 30px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #ddd;
+    height: 60px;
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.site-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #d9534f; /* Rojo E-learning */
+}
+
+.header-nav {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-item {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    padding: 20px 0;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-item.active,
+.nav-item:hover {
+    color: #333;
+    border-bottom-color: #d9534f;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-name {
+    font-size: 0.9em;
+    color: #555;
+    font-weight: 600;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Menú de Salir (Opcional, por ahora oculto) */
+.user-menu {
+    display: none; 
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+.user-menu button {
+    background: none;
+    border: none;
+    color: #333;
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+.user-menu button:hover {
+    background: #f4f4f4;
+}
+/* Fin de estilos del Header */
+
+/* --- TUS ESTILOS ANTERIORES (DEBEN ESTAR DEBAJO) --- */
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5;
+    color: #333;
+}
+/* --- REEMPLAZA TUS ESTILOS DE .main-footer-bottom CON ESTOS --- */
+
+.main-footer-bottom {
+    width: 100%;
+    background-color: #ffffff; /* Fondo blanco */
+    border-top: 2px solid #e0e0e0; /* Borde superior más grueso */
+    padding: 30px 40px;
+    margin-top: 40px;
+    box-sizing: border-box;
+    position: relative; /* Para el botón de subir */
+    color: #555;
+}
+
+.footer-columns {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1300px; /* Mismo ancho que .content-area */
+    margin: 0 auto 30px auto; /* Margen inferior antes del copyright */
+    flex-wrap: wrap;
+    gap: 30px; /* Espacio entre columnas */
+}
+
+.footer-column {
+    flex-basis: 300px; /* Base de 300px, crecerá si hay espacio */
+    flex-grow: 1;
+}
+
+.footer-column h4 {
+    color: #d9534f; /* Rojo E-learning */
+    font-size: 1.2em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.footer-column p {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.footer-link {
+    display: block;
+    color: #d9534f; /* Enlaces en rojo, como en la imagen */
+    text-decoration: none;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.footer-link:hover {
+    text-decoration: underline;
+}
+
+.footer-copyright {
+    text-align: center;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    font-size: 0.9em;
+    color: #777;
+}
+.footer-copyright p {
+    margin: 0;
+}
+
+/* Botón de Subir (Estilo de la imagen) */
+.scroll-top-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 30px;
+    background-color: #d9534f; /* Rojo */
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.2em;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: background-color 0.2s;
+}
+.scroll-top-btn:hover {
+    background-color: #c82333; /* Rojo más oscuro */
+}
+/* --- ESTILOS PARA EL MENÚ DESPLEGABLE DE USUARIO --- */
+
+/* 1. Hacemos que el contenedor sea "relativo" para
+      que el menú se posicione dentro de él. */
+.user-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 2. Hacemos que el avatar parezca un botón */
+#user-avatar-toggle {
+    cursor: pointer;
+    /* (Asumo que ya tienes los estilos de color/tamaño) */
+    width: 36px;
+    height: 36px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* 3. El menú (oculto por defecto) */
+#user-menu-dropdown {
+    display: none; /* Oculto por defecto */
+    position: absolute;
+    top: 50px; /* Se posiciona 50px debajo del header */
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    width: 150px;
+}
+
+/* 4. La regla MÁGICA: Cuando el JS añade la clase ".show", se muestra */
+#user-menu-dropdown.show {
+    display: block;
+}
+
+/* 5. Estilo del botón "Salir" */
+#user-menu-dropdown button {
+    background: none;
+    border: none;
+    color: #d9534f; /* Color rojo para "Salir" */
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+#user-menu-dropdown button:hover {
+    background: #f9f9f9;
+}

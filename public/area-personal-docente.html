@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Área Personal - Docente</title>
+    <link rel="stylesheet" href="style-curso.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        .review-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        /* Estilo para la nueva barra de notificación/limpieza */
+        .notification-bar {
+            padding: 10px;
+            background-color: #ffe4e1; /* Rosa claro/rojo suave */
+            border: 1px solid #ffc9c9;
+            color: #dc3545;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .btn-limpiar {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-limpiar:hover {
+            background-color: #c82333;
+        }
+        /* [Otros estilos se mantienen igual] */
+        .review-icon {
+            font-size: 24px;
+            color: #007bff;
+            margin-right: 15px;
+        }
+        .review-content {
+            flex-grow: 1;
+        }
+        .review-title {
+            font-weight: bold;
+            display: block;
+        }
+        .review-course {
+            color: #6c757d;
+            font-size: 0.9em;
+            display: block;
+        }
+        .review-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+        .status-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .status-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .btn-review {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        .btn-delete-task {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            margin-top: 5px;
+            padding: 0;
+            font-size: 1.1em;
+            transition: color 0.2s;
+        }
+        .btn-delete-task:hover {
+            color: #a71d2a;
+        }
+        /* --- ESTILOS PARA EL MENÚ DESPLEGABLE DE USUARIO --- */
+
+/* 1. Hacemos que el contenedor sea "relativo" para
+      que el menú se posicione dentro de él. */
+.user-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 2. Hacemos que el avatar parezca un botón */
+#user-avatar-toggle {
+    cursor: pointer;
+    /* (Asumo que ya tienes los estilos de color/tamaño) */
+    width: 36px;
+    height: 36px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* 3. El menú (oculto por defecto) */
+#user-menu-dropdown {
+    display: none; /* Oculto por defecto */
+    position: absolute;
+    top: 50px; /* Se posiciona 50px debajo del header */
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    width: 150px;
+}
+
+/* 4. La regla MÁGICA: Cuando el JS añade la clase ".show", se muestra */
+#user-menu-dropdown.show {
+    display: block;
+}
+
+/* 5. Estilo del botón "Salir" */
+#user-menu-dropdown button {
+    background: none;
+    border: none;
+    color: #d9534f; /* Color rojo para "Salir" */
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+#user-menu-dropdown button:hover {
+    background: #f9f9f9;
+}
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+            <span class="site-title">E-LEARNING</span>
+        </div>
+        <nav class="header-nav">
+            <a href="/area-personal" class="nav-item active" id="link-area">Área personal</a>
+            <a href="/docente.html" class="nav-item" id="link-cursos">Mis cursos</a>
+        </nav>
+        <div class="header-right">
+        <div class="user-section">
+            <span class="user-name" id="user-name">Lesly Chamba Guayasamin</span>
+            
+            <div class="user-avatar" id="user-avatar-toggle">LC</div>
+            
+            <div class="user-menu" id="user-menu-dropdown">
+                <button id="logout-btn">Salir</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-area">
+        <div class="content-header">
+            <h1>Área Personal del Docente</h1>
+            <p>Aquí encontrarás un resumen de tus actividades pendientes.</p>
+        </div>
+        
+        <section class="topic-section">
+            <div id="cleanup-message">
+                </div>
+            
+            <h3><i class="fas fa-check-double"></i> Tareas Pendientes por Revisar</h3>
+            
+            <ul id="review-list">
+                </ul>
+        </section>
+    </main>
+
+    <footer class="main-footer-bottom">
+        <div class="footer-columns">
+            <div class="footer-column"><h4>E-Learning</h4><p>Aulas virtuales...</p><a href="#" class="footer-link">Marzo 2025 - Julio 2025</a></div>
+            <div class="footer-column"><h4>Mis Cursos (Bloques)</h4><a href="/curso-docente.html?curso=clase-a&nombre=Software%20de%20Arquitectura" class="footer-link">Software de Arquitectura</a><a href="/curso-docente.html?curso=clase-b&nombre=Redes%20y%20Conectividad" class="footer-link">Redes y Conectividad</a><a href="/curso-docente.html?curso=clase-c&nombre=Base%20de%20Datos" class="footer-link">Base de Datos</a></div>
+            <div class="footer-column"><h4>Enlaces</h4><a href="#" class="footer-link">Entornos Virtuales</a><a href="#" class="footer-link">Gestión de Proyectos</a><a href="#" class="footer-link">Evaluaciones</a></div>
+        </div>
+        <div class="footer-copyright"><p>© 2025 E-Learning. Todos los derechos reservados.</p></div>
+        <a href="#" id="scroll-to-top" class="scroll-top-btn"><i class="fas fa-arrow-up"></i></a>
+    </footer>
+
+<script>
+    // Define las tareas de prueba fuera del DOMContentLoaded para usarlas en la función de limpieza
+    const TAREAS_DE_PRUEBA = [
+        {
+            taskId: Date.now(), 
+            titulo: 'Práctica No. 1 - RACI',
+            cursoNombre: 'Software de Arquitectura',
+            descripcion: 'Revisar matriz RACI y WBS del proyecto.',
+            sala: 'clase-a' 
+        },
+        {
+            taskId: Date.now() + 1, 
+            titulo: 'Examen Módulo 2',
+            cursoNombre: 'Redes y Conectividad',
+            descripcion: 'Pendiente de calificación a 15 estudiantes.',
+            sala: 'clase-b'
+        }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const reviewList = document.getElementById('review-list');
+        const cleanupMessage = document.getElementById('cleanup-message');
+        
+        // ====================================================================
+        // === LÓGICA DE CARGA Y LIMPIEZA DE TAREAS (Tu código original) ===
+        // ====================================================================
+        
+        const tareasGuardADAS = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+        
+        if (tareasGuardADAS.length === 0) {
+            localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA));
+            cargarTareas();
+        } else {
+            cargarTareas();
+            mostrarMensajeLimpieza();
+        }
+
+        // ====================================================================
+        // === LÓGICA DE BORRADO: Event Delegation (Tu código original) ===
+        // ====================================================================
+        reviewList.addEventListener('click', (e) => {
+            const deleteButton = e.target.closest('.btn-delete-task');
+            
+            if (!deleteButton) {
+                return;
+            }
+
+            e.preventDefault(); 
+            
+            if (!confirm("¿Estás seguro de que quieres borrar esta tarea de la lista?")) {
+                return;
+            }
+
+            const taskId = deleteButton.dataset.taskId;
+            
+            let currentTareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+            currentTareas = currentTareas.filter(t => t.taskId.toString() !== taskId);
+            localStorage.setItem('tareasDocente', JSON.stringify(currentTareas));
+
+            deleteButton.closest('li.review-item').remove();
+            
+            if (currentTareas.length === 0) {
+                mostrarMensajeVacio();
+            }
+        });
+
+        // Manejador del botón de limpieza
+        cleanupMessage.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-limpiar')) {
+                limpiarTareasAntiguas();
+            }
+        });
+        
+        // ====================================================================
+        // === Funciones Auxiliares (Tu código original) ===
+        // ====================================================================
+        function cargarTareas() {
+            const tareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+            
+            if (tareas.length === 0) {
+                mostrarMensajeVacio();
+                return;
+            }
+            
+            reviewList.innerHTML = ''; 
+            tareas.forEach(tarea => {
+                mostrarTareaPorRevisar(tarea);
+            });
+        }
+        
+        function mostrarMensajeVacio() {
+            reviewList.innerHTML = '<li class="review-item" style="justify-content: center; color: #777;">No hay tareas publicadas que requieran revisión.</li>';
+        }
+
+        function mostrarMensajeLimpieza() {
+            cleanupMessage.innerHTML = `
+                <div class="notification-bar">
+                    <i class="fas fa-exclamation-triangle"></i> Detectamos tareas guardadas anteriormente.
+                    Si desea ver las tareas de ejemplo, pulse: 
+                    <button class="btn-limpiar">Limpiar y Recargar</button>
+                </div>
+            `;
+        }
+
+        function limpiarTareasAntiguas() {
+            localStorage.removeItem('tareasDocente'); 
+            localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA)); 
+            cleanupMessage.innerHTML = ''; 
+            cargarTareas(); 
+        }
+
+        function mostrarTareaPorRevisar(data) {
+            let iconClass = 'fas fa-file-alt';
+            if (data.material) iconClass = 'fas fa-paperclip';
+            if (data.sala === 'clase-c') iconClass = 'fas fa-database';
+            if (data.sala === 'clase-b') iconClass = 'fas fa-network-wired';
+            if (data.sala === 'clase-a') iconClass = 'fas fa-code'; 
+
+            const item = document.createElement('li');
+            item.className = 'review-item';
+            
+            item.innerHTML = `
+                <div class="review-icon">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="review-content">
+                    <span class="review-title">${data.titulo}</span>
+                    <span class="review-course">Curso: ${data.cursoNombre}</span>
+                    <p class="review-description">${data.descripcion || 'Sin descripción.'}</p>
+                </div>
+                <div class="review-status">
+                    <span class="status-number">0</span>
+                    <span class="status-label">Entregas</span>
+                    <a href="#" class="btn-review">Revisar</a>
+                    
+                    <button class="btn-delete-task" data-task-id="${data.taskId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            reviewList.appendChild(item);
+        }
+
+        
+        // ===================================================
+        // === 5. LÓGICA DEL MENÚ DESPLEGABLE (AÑADIDO) ===
+        // ===================================================
+        
+        // 1. Seleccionar los elementos del menú
+        const avatarToggle = document.getElementById('user-avatar-toggle');
+        const userMenu = document.getElementById('user-menu-dropdown');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // 2. Manejar clic en el avatar (si existen los elementos)
+        if (avatarToggle && userMenu && logoutBtn) {
+            avatarToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita que se cierre inmediatamente por el listener de 'window'
+                userMenu.classList.toggle('show');
+            });
+
+            // 3. Manejar clic en el botón "Salir"
+            logoutBtn.addEventListener('click', () => {
+                console.log("Redirigiendo a login.html...");
+                window.location.href = 'login.html'; // Redirigir a login
+            });
+        }
+
+        // 4. Cierra el menú si se hace clic fuera de él
+        window.addEventListener('click', (e) => {
+            if (userMenu && userMenu.classList.contains('show')) {
+                // Si el clic NO fue en el avatar Y NO fue dentro del menú
+                if (!avatarToggle.contains(e.target) && !userMenu.contains(e.target)) {
+                    userMenu.classList.remove('show');
+                }
+            }
+        });
+
+    });
+</script>
+</body>
+</html>

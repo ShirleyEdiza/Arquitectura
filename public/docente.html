@@ -1,221 +1,397 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel del Docente (Publisher)</title>
+    <title>Panel del Docente - Mis Cursos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ======================================================= */
+        /* === ESTILOS BASE Y STICKY FOOTER === */
+        /* ======================================================= */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main.content-area {
+            flex-grow: 1; /* Empuja el footer */
+            width: 100%;
+            max-width: 1300px; /* Centrado */
+            margin: 20px auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .main-header, .main-footer-bottom {
+            flex-shrink: 0;
+        }
 
-    <!-- CSS compartido con estudiantes -->
-    <link rel="stylesheet" href="estudiante.css">
-     <link rel="stylesheet" href="area-personal.css">
-    <link rel="stylesheet" href="/style.css"> 
+        /* ======================================================= */
+        /* === HEADER Y NAVEGACIÓN === */
+        /* ======================================================= */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #ddd;
+            height: 60px;
+            box-sizing: border-box;
+        }
+        .header-left { display: flex; align-items: center; }
+        .logo { height: 40px; margin-right: 10px; }
+        .site-title { font-size: 1.3em; font-weight: 700; color: #d9534f; }
+        .header-nav { display: flex; gap: 20px; }
+        .nav-item {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            padding: 20px 0;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-bottom 0.2s;
+        }
+        /* Marcar "Mis Cursos" como activo */
+        .nav-item#link-cursos {
+             color: #333;
+             border-bottom-color: #d9534f;
+        }
+        .nav-item:hover {
+            color: #333;
+            border-bottom-color: #d9534f;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-section { position: relative; display: flex; align-items: center; gap: 10px; }
+        .user-name { font-size: 0.9em; color: #555; font-weight: 600; }
+        .user-avatar {
+            cursor: pointer; width: 36px; height: 36px; background: #007bff; color: white;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: 600;
+        }
+        .user-menu {
+            display: none; position: absolute; top: 50px; right: 0;
+            background: white; border: 1px solid #ddd;
+            border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000; width: 150px;
+        }
+        .user-menu.show { display: block; }
+        .user-menu button {
+            background: none; border: none; color: #d9534f;
+            padding: 10px 20px; width: 100%; text-align: left;
+            cursor: pointer;
+        }
+        .user-menu button:hover { background: #f9f9f9; }
 
+
+        /* ======================================================= */
+        /* === CONTENIDO PRINCIPAL Y FILTROS === */
+        /* ======================================================= */
+        .content-header {
+             /* Eliminado el fondo blanco y padding extra */
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc; /* Línea separadora */
+            padding-bottom: 15px;
+        }
+        .content-header h1 {
+            margin: 0 0 10px 0; /* Margen inferior */
+            color: #333;
+            font-size: 1.8em; /* Más grande */
+        }
+        /* Ocultar párrafo de descripción */
+        .content-header p { display: none; }
+
+        /* --- NUEVA BARRA DE FILTROS --- */
+        .filters-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+        .filters-bar select, .filters-bar input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 0.9em;
+        }
+        .filters-bar input[type="text"] {
+            flex-grow: 1; /* Ocupa espacio disponible */
+            position: relative; /* Para el icono de borrar */
+        }
+        /* Icono 'x' para borrar búsqueda (simulado) */
+        .search-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            cursor: pointer;
+            display: none; /* Mostrar con JS si hay texto */
+        }
+        .filters-bar input[type="text"]:not(:placeholder-shown) + .search-clear {
+             display: inline;
+        }
+
+
+        /* ======================================================= */
+        /* === TARJETAS DE CURSO (MODIFICADAS) === */
+        /* ======================================================= */
+        .dashboard-cursos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .curso-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0, 0.08);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            position: relative; /* Para el overlay */
+        }
+        .curso-card:hover { transform: translateY(-5px); }
+
+        /* --- Imagen y Overlay de Progreso --- */
+        .curso-image-container {
+             position: relative;
+        }
+        .curso-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block; /* Evita espacio extra debajo */
+        }
+        .progress-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .curso-info { padding: 15px; }
+        /* Título en Rojo */
+        .curso-info h3 {
+            margin: 0 0 5px 0;
+            color: #d9534f; /* Rojo */
+            font-size: 1.1em;
+        }
+        /* Párrafo de Clase y Docente */
+        .curso-info p {
+            margin: 0 0 10px 0; /* Menos margen inferior */
+            font-size: 0.9em;
+            color: #666;
+        }
+        .docente-nombre {
+             margin-bottom: 15px !important; /* Más espacio antes del botón */
+        }
+
+        /* Botón "Ver Tareas" */
+        .btn-gestionar, .btn-ver-tareas /* Aplicar a ambos para consistencia */ {
+            background: #d9534f; /* Rojo */
+            color: white;
+            width: 100%;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-align: center; /* Para los 'a' */
+            display: block; /* Para los 'a' */
+            text-decoration: none; /* Para los 'a' */
+            box-sizing: border-box; /* Para los 'a' */
+        }
+        .btn-gestionar:hover, .btn-ver-tareas:hover {
+            background: #c82333;
+        }
+
+        /* ======================================================= */
+        /* === FOOTER (Sin Cambios Estructurales) === */
+        /* ======================================================= */
+        .main-footer-bottom {
+            width: 100%; background-color: #ffffff; border-top: 2px solid #e0e0e0;
+            padding: 30px 40px; box-sizing: border-box; position: relative; color: #555;
+        }
+        .footer-columns {
+            display: flex; justify-content: space-between; max-width: 1300px;
+            margin: 0 auto 30px auto; flex-wrap: wrap; gap: 30px;
+        }
+        .footer-column { flex-basis: 300px; flex-grow: 1; }
+        .footer-column h4 {
+            color: #d9534f; font-size: 1.2em; margin-top: 0; margin-bottom: 15px;
+            border-bottom: 1px solid #eee; padding-bottom: 5px;
+        }
+        .footer-column p { margin: 0 0 10px 0; font-size: 0.9em; color: #333; }
+        .footer-link {
+            display: block; color: #d9534f; text-decoration: none;
+            font-size: 0.95em; margin-bottom: 8px; font-weight: 500;
+        }
+        .footer-link:hover { text-decoration: underline; }
+        .footer-copyright {
+            text-align: center; border-top: 1px solid #eee; padding-top: 20px;
+            font-size: 0.9em; color: #777;
+        }
+        .footer-copyright p { margin: 0; }
+        .scroll-top-btn {
+            position: absolute; bottom: 20px; right: 30px; background-color: #d9534f;
+            color: white; width: 40px; height: 40px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; text-decoration: none;
+            font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.2s;
+        }
+        .scroll-top-btn:hover { background-color: #c82333; }
+    </style>
 </head>
 <body>
-      <!-- HEADER unificado con el diseño de estudiantes -->
-    <header class="main-header">
-        <div class="header-left">
-            <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
-            <span class="site-title">E-LEARNING</span>
-        </div>
 
-        <nav class="header-nav">
-            <a href="#" class="nav-item" id="link-area">Área personal</a>
-            <a href="#" class="nav-item active" id="link-cursos">Mis cursos</a>
-        </nav>
+   <header class="main-header">
+       <div class="header-left">
+           <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+           <span class="site-title">E-LEARNING</span>
+       </div>
+       <nav class="header-nav">
+           <a href="/area-personal-docente.html" class="nav-item" id="link-area">Área personal</a>
+           <a href="/docente.html" class="nav-item active" id="link-cursos">Mis cursos</a>
+       </nav>
+       <div class="header-right">
+           <div class="user-section">
+               <span class="user-name" id="user-name">Lesly Chamba Guayasamin</span>
+               <div class="user-avatar" id="user-avatar-toggle">LC</div>
+               <div class="user-menu" id="user-menu-dropdown">
+                   <button id="logout-btn">Salir</button>
+               </div>
+           </div>
+       </div>
+   </header>
 
-        <div class="header-right">
-            <!-- Icono de Notificación -->
-            <div class="notification-icon-container">
-                <i class="fas fa-bell notification-icon" id="bell-icon"></i>
-                <span class="notification-counter" id="notification-counter">0</span>
+   <main class="content-area">
 
-                <div class="notification-dropdown" id="notification-dropdown">
-                    <h4>Notificaciones</h4>
-                    <div id="notificaciones-lista">
-                        <p class="empty-message">No hay notificaciones nuevas.</p>
-                    </div>
-                    <a href="#" class="view-all">Ver todas</a>
-                </div>
-            </div>
-
-            <!-- Usuario -->
-            <div class="user-section">
-  <span class="user-name" id="user-name">LESLY ALEJANDRA CHAMBA GUAYASAMIN</span>
-  <div class="user-avatar" id="user-avatar"></div>
-  <div class="user-menu" id="user-menu">
-    <button id="logout-btn">Salir</button>
-  </div>
-</div>
-
-        </div>
-    </header>
-
-
-    <main class="content-area">
-        
         <div class="content-header">
-            <h1>Mis Cursos</h1>
-            <p>Selecciona un curso para agregar tareas, enviar avisos o gestionar materiales.</p>
-        </div>
-        
-        <div class="dashboard-cursos">
-            
-            <div class="curso-card">
-                <img src="/images/arquitectura.jpg" alt="Arquitectura">
-                <div class="curso-info">
-                    <h3>SOFTWARE DE ARQUITECTURA</h3>
-                    <p>Clase: clase-a</p>
-                    <button class="btn-gestionar" data-curso-id="clase-a" data-curso-nombre="Software de Arquitectura">
-                        + Agregar Tarea / Aviso
-                    </button>
-                </div>
+            <h1>Mis cursos</h1>
             </div>
 
-            <div class="curso-card">
-                <img src="/images/redes.jpg" alt="Redes">
-                <div class="curso-info">
-                    <h3>REDES Y CONECTIVIDAD</h3>
-                    <p>Clase: clase-b</p>
-                    <button class="btn-gestionar" data-curso-id="clase-b" data-curso-nombre="Redes y Conectividad">
-                        + Agregar Tarea / Aviso
-                    </button>
-                </div>
-            </div>
-            <div class="curso-card">
-                <img src="/images/base.jpg" alt="Redes">
-                <div class="curso-info">
-                    <h3>BASE DE DATOS</h3>
-                    <p>Clase: clase-a</p>
-                    <button class="btn-gestionar" data-curso-id="clase-b" data-curso-nombre="Redes y Conectividad">
-                        + Agregar Tarea / Aviso
-                    </button>
-                </div>
-            </div>
-            
+        <div class="filters-bar">
+            <select id="filter-status">
+                <option value="todos">Todos</option>
+                <option value="progreso">En progreso</option>
+                <option value="completado">Completado</option>
+            </select>
+            <div style="position: relative; flex-grow: 1;">
+                 <input type="text" id="search-curso" placeholder="Buscar...">
+                 </div>
+            <select id="sort-order">
+                <option value="nombre">Ordenar por nombre del curso</option>
+                <option value="fecha">Ordenar por fecha</option>
+            </select>
+            <select id="view-mode">
+                <option value="tarjeta">Tarjeta</option>
+                <option value="lista">Lista</option>
+            </select>
         </div>
-    </main>
 
-    <!-- Modal de publicación -->
-    <div id="modal-publicar" class="modal-overlay">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h2 id="modal-titulo">Publicar en...</h2>
-            
-            <form id="form-tarea" class="panel-body" style="padding: 0; box-shadow: none;">
-                
-                <div class="form-group">
-                    <label for="select-curso">Curso (Sala):</label>
-                    <select id="select-curso"></select>
+       <div class="dashboard-cursos">
+           <div class="curso-card">
+               <div class="curso-image-container">
+                   <img src="/images/arquitectura.jpg" alt="Arquitectura">
+                   <div class="progress-overlay">0% completado</div>
+               </div>
+               <div class="curso-info">
+                   <h3>SOFTWARE DE ARQUITECTURA</h3>
+                   <p class="docente-nombre">Docente: Lesly</p>
+                   <a href="/curso-docente.html?curso=clase-a&nombre=Software%20de%20Arquitectura" class="btn-ver-tareas">
+                       Ver Tareas
+                   </a>
+               </div>
+           </div>
+
+           <div class="curso-card">
+               <div class="curso-image-container">
+                    <img src="/images/redes.jpg" alt="Redes">
+                    <div class="progress-overlay">100% completado</div>
+               </div>
+               <div class="curso-info">
+                   <h3>REDES Y CONECTIVIDAD</h3>
+                   <p class="docente-nombre">Docente: Liliana</p>
+                   <a href="/curso-docente.html?curso=clase-b&nombre=Redes%20y%20Conectividad" class="btn-ver-tareas">
+                       Ver Tareas
+                   </a>
+               </div>
+           </div>
+
+           <div class="curso-card">
+                <div class="curso-image-container" style="height: 150px; background-color: #eee; display: flex; align-items: center; justify-content: center; color: #aaa;">
+                     <div class="progress-overlay">50% completado</div>
                 </div>
+               <div class="curso-info">
+                   <h3>BASE DE DATOS</h3>
+                    <p class="docente-nombre">Docente: Paul</p>
+                   <a href="/curso-docente.html?curso=clase-c&nombre=Base%20de%20Datos" class="btn-ver-tareas">
+                       Ver Tareas
+                   </a>
+               </div>
+           </div>
 
-                <div class="form-group">
-                    <label for="input-titulo">Título de la Tarea o Aviso:</label>
-                    <input type="text" id="input-titulo" placeholder="Ej: Tarea 1 - Diagrama de Clases" required>
-                </div>
+           </div>
+   </main>
 
-                <div class="form-group">
-                    <label for="input-desc">Descripción:</label>
-                    <textarea id="input-desc" rows="4" placeholder="Detalles de la tarea..."></textarea>
-                </div>
+   <footer class="main-footer-bottom">
+       <div class="footer-columns">
+           <div class="footer-column">
+               <h4>E-Learning</h4>
+               <p>Aulas virtuales de periodos académicos anteriores:</p>
+               <a href="#" class="footer-link">Marzo 2025 - Julio 2025</a>
+           </div>
+           <div class="footer-column">
+               <h4>Mis Cursos (Bloques)</h4>
+               <a href="/curso-docente.html?curso=clase-a&nombre=Software%20de%20Arquitectura" class="footer-link">Software de Arquitectura</a>
+               <a href="/curso-docente.html?curso=clase-b&nombre=Redes%20y%20Conectividad" class="footer-link">Redes y Conectividad</a>
+               <a href="/curso-docente.html?curso=clase-c&nombre=Base%20de%20Datos" class="footer-link">Base de Datos</a>
+           </div>
+           </div>
+       <div class="footer-copyright">
+           <p>© 2025 E-Learning. Todos los derechos reservados.</p>
+       </div>
+       <a href="#" id="scroll-to-top" class="scroll-top-btn">
+           <i class="fas fa-arrow-up"></i>
+       </a>
+   </footer>
 
-                <div class="form-group">
-                    <label for="input-fecha">Fecha Límite:</label>
-                    <input type="datetime-local" id="input-fecha">
-                </div>
+   <script>
+       // Espera a que la página cargue
+       document.addEventListener('DOMContentLoaded', () => {
 
-                <div class="form-group">
-                    <label for="input-material">Material de Referencia (URL):</label>
-                    <input type="url" id="input-material" placeholder="https://ejemplo.com/material.pdf">
-                </div>
+           const avatarToggle = document.getElementById('user-avatar-toggle');
+           const userMenu = document.getElementById('user-menu-dropdown');
+           const logoutBtn = document.getElementById('logout-btn');
 
-                <button type="submit" id="btn-publicar">📢 Publicar Ahora</button>
-                <div id="status" style="margin-top: 15px;"></div>
-            </form>
-            
-        </div>
-    </div>
+           // Lógica Menú Desplegable (Sin cambios)
+           if(avatarToggle && userMenu && logoutBtn) {
+               avatarToggle.addEventListener('click', (e) => {
+                   e.stopPropagation();
+                   userMenu.classList.toggle('show');
+               });
+               logoutBtn.addEventListener('click', () => {
+                   console.log("Cerrando sesión y redirigiendo a login.html");
+                   window.location.href = 'login.html';
+               });
+               window.addEventListener('click', (e) => {
+                   if (userMenu.classList.contains('show') && !avatarToggle.contains(e.target)) {
+                       userMenu.classList.remove('show');
+                   }
+               });
+           }
 
+          
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // --- Conexión al socket ---
-        const socket = io();
-        
-        // Elementos del Modal
-        const modal = document.getElementById('modal-publicar');
-        const modalTitulo = document.getElementById('modal-titulo');
-        const btnCerrar = document.querySelector('.modal-close');
-        
-        // Elementos del Formulario
-        const form = document.getElementById('form-tarea');
-        const selectCurso = document.getElementById('select-curso');
-        const inputTitulo = document.getElementById('input-titulo');
-        const statusDiv = document.getElementById('status');
-        
-        // Botones de las Tarjetas
-        const btnsGestionar = document.querySelectorAll('.btn-gestionar');
+       });
+   </script>
 
-        // --- Llenar el <select> con los cursos visibles ---
-        const cursos = document.querySelectorAll('.curso-card');
-        selectCurso.innerHTML = ''; // Limpiamos cualquier valor previo
-
-        cursos.forEach(curso => {
-            const cursoId = curso.querySelector('.btn-gestionar').getAttribute('data-curso-id');
-            const cursoNombre = curso.querySelector('h3').textContent;
-            const option = document.createElement('option');
-            option.value = cursoId;
-            option.textContent = cursoNombre;
-            selectCurso.appendChild(option);
-        });
-
-        // --- Lógica para ABRIR el modal ---
-        btnsGestionar.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const cursoId = btn.getAttribute('data-curso-id');
-                const cursoNombre = btn.getAttribute('data-curso-nombre');
-                
-                selectCurso.value = cursoId;
-                modalTitulo.textContent = `Publicar en: ${cursoNombre}`;
-                statusDiv.textContent = "";
-                modal.style.display = 'flex';
-            });
-        });
-
-        // --- Lógica para CERRAR el modal ---
-        const cerrarModal = () => {
-            modal.style.display = 'none';
-            form.reset();
-        }
-        btnCerrar.addEventListener('click', cerrarModal);
-        
-        // --- Envío del formulario ---
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            if (!inputTitulo.value.trim()) {
-                alert("El título es obligatorio.");
-                return;
-            }
-            
-            const tareaData = {
-                sala: selectCurso.value,
-                titulo: inputTitulo.value,
-                descripcion: document.getElementById('input-desc').value,
-                fechaLimite: document.getElementById('input-fecha').value,
-                material: document.getElementById('input-material').value
-            };
-            
-            socket.emit('publicar-tarea', tareaData);
-            
-            statusDiv.textContent = `✅ Tarea publicada en ${selectCurso.options[selectCurso.selectedIndex].text}.`;
-            setTimeout(cerrarModal, 2000);
-        });
-
-        // --- Lógica de "Escribiendo..." ---
-        inputTitulo.addEventListener('keyup', () => {
-            socket.emit('docente-escribiendo', { sala: selectCurso.value });
-        });
-    </script>
 </body>
 </html>
