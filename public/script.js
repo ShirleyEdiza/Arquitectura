@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const contenido = document.getElementById("contenido-dinamico");
   const linkArea = document.getElementById("link-area");
   const linkCursos = document.getElementById("link-cursos");
+  // -------------------- SOCKET.IO -------------------- //
+  const socket = io();
+
 
   // Cargar por defecto "Mis cursos"
   cargarContenido("mis-cursos.html");
@@ -37,33 +40,68 @@ document.addEventListener("DOMContentLoaded", () => {
   const campana = document.getElementById("bell-icon");
   const dropdown = document.getElementById("notification-dropdown");
 
-  function publicarNotificacion(mensaje) {
-    notificaciones.push(mensaje);
-    actualizarNotificaciones();
+  // Función para agregar notificación
+function publicarNotificacion(mensaje) {
+  notificaciones.unshift(mensaje); // agregar al inicio
+  actualizarNotificaciones();
+}
+
+function actualizarNotificaciones() {
+  contador.textContent = notificaciones.length;
+  listaNotificaciones.innerHTML = notificaciones.length
+    ? notificaciones.map(n => `<p>${n}</p>`).join("")
+    : `<p class="empty-message">No hay notificaciones nuevas.</p>`;
+}
+
+// Mostrar / ocultar dropdown
+campana.addEventListener("click", () => {
+  dropdown.classList.toggle("show");
+});
+
+// -------------------- ESCUCHAR NUEVAS TAREAS -------------------- //
+socket.on("nueva-tarea", (tarea) => {
+  console.log("📩 Nueva tarea recibida:", tarea);
+
+  // Mensaje para la campanita
+  const mensaje = `Nueva tarea en ${tarea.curso}: ${tarea.titulo} (Entrega: ${tarea.fechaLimite})`;
+  publicarNotificacion(mensaje);
+
+  // Mostrar el contador en rojo
+  contador.textContent = notificaciones.length;
+  contador.style.display = "inline-block";
+
+  // Mostrar también en el área personal si está activa
+  if (linkArea.classList.contains("active")) {
+    agregarTareaAreaPersonal(tarea);
+  }
+});
+
+
+// -------------------- FUNCIÓN PARA MOSTRAR EN ÁREA PERSONAL -------------------- //
+function agregarTareaAreaPersonal(tarea) {
+  // Buscar el contenedor de la línea de tiempo
+  const timeline = document.getElementById("timeline-container");
+
+  // Si el usuario aún no ha abierto área personal, no hacemos nada
+  if (!timeline) {
+    console.warn("⏳ Timeline no cargado todavía, se agregará cuando abra el área personal.");
+    return;
   }
 
-  function actualizarNotificaciones() {
-    contador.textContent = notificaciones.length;
-    listaNotificaciones.innerHTML = notificaciones
-      .map(n => `<p>${n}</p>`)
-      .join("") || `<p class="empty-message">No hay notificaciones nuevas.</p>`;
-  }
+  // Crear un nuevo bloque para la tarea
+  const item = document.createElement("div");
+  item.className = "timeline-item";
+  item.innerHTML = `
+    <p class="timeline-date">${tarea.fecha}</p>
+    <p class="timeline-task">${tarea.titulo}</p>
+    <span class="timeline-course">${tarea.curso}</span>
+    <button>Vista</button>
+  `;
 
-  campana.addEventListener("click", () => {
-    dropdown.classList.toggle("show");
-  });
+  // Insertar al principio (la tarea más reciente arriba)
+  timeline.prepend(item);
+}
 
-  // Simulación del patrón Publisher–Subscriber
-  setInterval(() => {
-    const ejemplos = [
-      "Nueva tarea publicada en Entornos Virtuales",
-      "Calificación actualizada en Software de Arquitectura",
-      "Mensaje nuevo del docente Liliana",
-      "Recordatorio: entrega de práctica mañana"
-    ];
-    const mensaje = ejemplos[Math.floor(Math.random() * ejemplos.length)];
-    publicarNotificacion(mensaje);
-  }, 10000);
 
   // -------------------- CARGAR FOOTER -------------------- //
   fetch("footer.html")
@@ -91,31 +129,48 @@ document.addEventListener("DOMContentLoaded", () => {
 const avatar = document.getElementById("user-avatar");
 const menu = document.getElementById("user-menu");
 const logoutBtn = document.getElementById("logout-btn");
+const userName = document.getElementById("user-name");
+
+// Mostrar nombre e iniciales automáticamente (funciona para docente y estudiante)
+if (userName && avatar) {
+  // nombre (ya lo tienes en usuario.nombreCompleto si quieres)
+  // para docente, puedes ponerlo directamente desde HTML o desde JS
+  avatar.textContent = userName.textContent
+    .split(" ")
+    .map(p => p[0])
+    .join("")
+    .slice(0,2)
+    .toUpperCase();
+}
 
 // Mostrar / ocultar el menú al hacer clic en el avatar
-avatar.addEventListener("click", () => {
-  menu.classList.toggle("show");
-});
+if (avatar && menu) {
+  avatar.addEventListener("click", () => menu.classList.toggle("show"));
 
-// Cerrar el menú si se hace clic fuera de él
-document.addEventListener("click", (e) => {
-  if (!avatar.contains(e.target) && !menu.contains(e.target)) {
-    menu.classList.remove("show");
-  }
-});
+  // Cerrar el menú si se hace clic fuera
+  document.addEventListener("click", (e) => {
+    if (!avatar.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.remove("show");
+    }
+  });
+}
 
 // Acción de "Salir"
-logoutBtn.addEventListener("click", () => {
-  // Aquí puedes poner tu lógica de backend (por ejemplo, cerrar sesión o limpiar token)
-  alert("Sesión finalizada. ¡Hasta pronto!");
-  window.location.href = "login.html"; // Redirige al login o inicio
-});
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    alert("Sesión finalizada. ¡Hasta pronto!");
+    window.location.href = "login.html";
+  });
+}
+
 
 // -------------------- CARGAR NOMBRE DEL USUARIO -------------------- //
 // (Simulación: luego el backend enviará estos datos)
 const usuario = {
   nombreCompleto: "SHIRLEY EDIZA CHELA LLUMIGUANO",
 };
+
+
 
 // Mostrar nombre e iniciales automáticamente
 document.getElementById("user-name").textContent = usuario.nombreCompleto;

@@ -37,15 +37,25 @@ app.post("/login", (req, res) => {
 io.on("connection", (socket) => {
   console.log("🟢 Usuario conectado.");
 
-  socket.on("publicar-tarea", (data) => {
-    console.log(`📢 Nueva tarea publicada: ${data.mensaje}`);
-    io.emit("nueva-tarea", { mensaje: data.mensaje, fecha: new Date().toLocaleTimeString() });
+  socket.on("publicar-tarea", (tarea) => {
+    console.log("📢 Nueva tarea publicada:", tarea);
+
+    // Emitir a todos los estudiantes
+    io.emit("nueva-tarea", {
+      curso: tarea.sala, // ✅ corregido
+      titulo: tarea.titulo,
+      descripcion: tarea.descripcion,
+      fechaLimite: tarea.fechaLimite,
+      material: tarea.material,
+      fecha: new Date().toLocaleDateString()
+    });
   });
 
   socket.on("disconnect", () => {
     console.log("🔴 Usuario desconectado.");
   });
 });
+
 
 const PORT = 3000;
 server.listen(PORT, () => {
