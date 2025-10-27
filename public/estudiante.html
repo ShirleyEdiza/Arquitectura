@@ -2,31 +2,64 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel del Estudiante</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del Estudiante - E-Learning</title>
+  <link rel="stylesheet" href="estudiante.css">
+  <link rel="stylesheet" href="area-personal.css">
+  <!-- Font Awesome para iconos como la campanita -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-  <header>
-    <h1>🎓 Panel del Estudiante (Subscriber)</h1>
-  </header>
 
-  <main>
-    <div id="notificaciones">
-      <p class="esperando">Esperando notificaciones en tiempo real...</p>
+  <!-- CABECERA/NAVBAR -->
+  <!-- CABECERA/NAVBAR -->
+<header class="main-header">
+  <div class="header-left">
+    <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+    <span class="site-title">E-LEARNING</span>
+  </div>
+
+  <nav class="header-nav">
+    <a href="#" class="nav-item" id="link-area">Área personal</a>
+    <a href="#" class="nav-item active" id="link-cursos">Mis cursos</a>
+  </nav>
+
+  <div class="header-right">
+    <!-- Icono de Notificación con Contador -->
+    <div class="notification-icon-container">
+      <i class="fas fa-bell notification-icon" id="bell-icon"></i>
+      <span class="notification-counter" id="notification-counter">0</span>
+
+      <!-- Contenedor desplegable para las notificaciones -->
+      <div class="notification-dropdown" id="notification-dropdown">
+        <h4>Notificaciones</h4>
+        <div id="notificaciones-lista">
+          <p class="empty-message">No hay notificaciones nuevas.</p>
+        </div>
+        <a href="#" class="view-all">Ver todas</a>
+      </div>
     </div>
+
+    <!-- Aquí irá el nombre del usuario y el menú del avatar -->
+    <div class="user-section">
+      <span class="user-name" id="user-name">SHIRLEY EDIZA CHELA LLUMIGUANO</span>
+      <div class="user-avatar" id="user-avatar">SC</div>
+
+      <!-- Menú desplegable al hacer clic en el avatar -->
+      <div class="user-menu" id="user-menu">
+        <button id="logout-btn">Salir</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main id="contenido-dinamico" class="main-content">
+    <!-- Aquí se cargará dinámicamente el contenido -->
   </main>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const notificaciones = document.getElementById("notificaciones");
-
-    socket.on("nueva-tarea", (data) => {
-      const p = document.createElement("p");
-      p.className = "notificacion";
-      p.innerHTML = `🆕 ${data.mensaje} <br><small>${data.fecha}</small>`;
-      notificaciones.appendChild(p);
-    });
-  </script>
+  <!-- Aquí se cargará el pie de página -->
+  <div id="footer-container"></div>
+  <script src="script.js"></script>
 </body>
 </html>
