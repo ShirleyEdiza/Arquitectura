@@ -1,10 +1,14 @@
+/* --- ESTILOS BASE */
 body {
   font-family: 'Segoe UI', sans-serif;
   background: #f4f4f4;
   margin: 0;
-  padding: 0;
+  /* Añadí padding y color de nuestro proyecto para mejor consistencia */
+  padding: 20px;
+  color: #333;
 }
 
+/* Estilos genéricos para tags (de tu archivo) */
 header {
   background: #2563eb;
   color: white;
@@ -17,35 +21,7 @@ main {
   text-align: center;
 }
 
-input, button {
-  padding: 10px;
-  margin: 5px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-button {
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #1e40af;
-}
-
-#notificaciones p {
-  background: #e0f2fe;
-  padding: 10px;
-  border-left: 5px solid #2563eb;
-  border-radius: 5px;
-  margin-top: 10px;
-}
-
-.esperando {
-  color: #64748b;
-}
-
+/* Tus nuevos estilos de Login (Conservados) */
 .login-container {
   background: white;
   width: 350px;
@@ -59,9 +35,368 @@ button:hover {
 .login-container input {
   width: 90%;
   margin-bottom: 10px;
+  /* Añadimos padding y borde para que se vea bien */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 .hint {
   color: gray;
   font-size: 0.8em;
+}
+
+.esperando {
+  color: #64748b;
+}
+
+/* --- ESTILOS DEL PROYECTO (Para Docente y Estudiante) --- */
+
+/* Contenedor principal de la App */
+.app-container {
+  max-width: 600px;
+  margin: 20px auto;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0, 0.05);
+  overflow: hidden;
+}
+
+/* Cabeceras de los paneles (azul y rojo) */
+.panel-header {
+  background: #007bff; /* Azul para Estudiante */
+  color: white;
+  padding: 15px 20px;
+  border-bottom: 1px solid #0069d9;
+}
+
+.panel-header.docente {
+  background: #dc3545; /* Rojo para Docente */
+  border-bottom: 1px solid #c82333;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 1.25em;
+}
+
+/* Cuerpo de los paneles */
+.panel-body {
+  padding: 20px;
+}
+
+/* --- Formularios (Inputs, Botones, Labels) --- */
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+/* Inputs, Selects y Textareas (Usamos estos en lugar de tu regla simple) */
+input[type="text"],
+input[type="url"],
+input[type="datetime-local"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box; /* Importante para que el width 100% respete el padding */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Botones (Usamos los de nuestro proyecto) */
+button {
+  background: #28a745; /* Verde para Publicar */
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #218838;
+}
+
+/* Botón específico de "Unirse" */
+button#btn-unirse {
+  background: #007bff; /* Azul para Unirse */
+}
+
+button#btn-unirse:hover {
+  background: #0056b3;
+}
+
+
+/* --- Notificaciones (Estudiante) --- */
+
+/* 1. Tu nuevo estilo de notificación (Conservado) */
+#notificaciones p {
+  background: #e0f2fe;
+  padding: 10px;
+  border-left: 5px solid #2563eb;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+/* 2. Estilos para la tarjeta de Tarea (Los que usa estudiante.html) */
+#lista-notificaciones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notificacion {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-left: 5px solid #007bff;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+.notificacion h4 {
+  margin: 0 0 5px 0;
+  color: #007bff;
+}
+.notificacion p {
+  margin: 5px 0;
+  font-size: 0.95em;
+}
+.notificacion .meta {
+  font-size: 0.8em;
+  color: #555;
+  margin-top: 10px;
+}
+.notificacion .meta strong {
+  color: #d9534f;
+  display: block;
+}
+.notificacion a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 600;
+}
+.notificacion a:hover {
+  text-decoration: underline;
+}
+
+/* --- Indicadores de Estado ("Escribiendo..." y "Conectado") --- */
+#status {
+  font-style: italic;
+  color: #666;
+  margin-top: 15px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+#typing-indicator {
+  font-style: italic;
+  color: #007bff;
+  height: 20px;
+  padding-left: 10px;
+  margin-bottom: 5px;
+}
+/* --- 1. ESTILOS BASE Y FULL-SCREEN --- */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0f2f5; /* Un fondo gris claro para el e-learning */
+  color: #333;
+}
+
+/* --- 2. NUEVA BARRA DE NAVEGACIÓN --- */
+.navbar {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
+  padding: 0 30px; /* Espaciado interno */
+  display: flex;
+  justify-content: space-between; /* Izquierda y Derecha */
+  align-items: center;
+  box-sizing: border-box; /* Importante para que el padding no rompa el 100% */
+  height: 60px;
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Espacio entre links */
+}
+
+.nav-brand {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: #d9534f; /* Rojo E-learning */
+  text-decoration: none;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  padding: 20px 0; /* Da altura al clic */
+  border-bottom: 3px solid transparent; /* Borde para "active" */
+}
+
+.nav-link.active,
+.nav-link:hover {
+  color: #333;
+  border-bottom: 3px solid #d9534f; /* Borde rojo al estar activo */
+}
+
+.nav-user {
+  font-size: 0.9em;
+  color: #555;
+}
+
+.nav-avatar {
+  width: 36px;
+  height: 36px;
+  background: #007bff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* --- 3. NUEVA ÁREA DE CONTENIDO --- */
+main.content-area {
+  width: 100%;
+  max-width: 1300px; /* Ancho máximo, pero centrado */
+  margin: 20px auto; /* Centra el contenido */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.content-header {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.content-header h1 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+.content-header p {
+  margin: 0;
+  color: #666;
+}
+
+/* --- 4. ESTILOS DE TARJETAS (Sin cambios) --- */
+.dashboard-cursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.curso-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+.curso-card:hover { transform: translateY(-5px); }
+.curso-card img { width: 100%; height: 150px; object-fit: cover; }
+.curso-card .curso-info { padding: 15px; }
+.curso-card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1em; }
+.curso-card p { margin: 0 0 15px 0; font-size: 0.9em; color: #666; }
+.btn-gestionar {
+  background: #d9534f; /* Botón rojo para gestionar */
+  color: white;
+  width: 100%;
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.btn-gestionar:hover { background: #c82333; }
+
+
+/* --- 5. ESTILOS DEL MODAL (Sin cambios) --- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 30px;
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0,0,0, 0.3);
+}
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  color: #aaa;
+  font-size: 30px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.modal-close:hover { color: #333; }
+.modal-content h2 { margin-top: 0; color: #333; }
+
+
+/* --- 6. ESTILOS DE FORMULARIO (Sin cambios) --- */
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: 600; }
+input[type="text"], input[type="url"], input[type="datetime-local"], select, textarea {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+/* Botón verde para Publicar DENTRO del modal */
+#form-tarea button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+#form-tarea button:hover { background: #218838; }
+
+#status {
+  font-style: italic;
+  color: #28a745; /* Color verde para éxito */
+  margin-top: 15px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
