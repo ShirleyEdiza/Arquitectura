@@ -9,11 +9,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // Cargar por defecto "Mis cursos"
   cargarContenido("mis-cursos.html");
 
-  linkArea.addEventListener("click", (e) => {
-    e.preventDefault();
-    cambiarActivo(linkArea);
-    cargarContenido("area-personal.html");
-  });
+  // Cuando el usuario abre el área personal
+linkArea.addEventListener("click", (e) => {
+  e.preventDefault();
+  cambiarActivo(linkArea);
+  cargarContenido("area-personal.html");
+
+  // Esperar a que se cargue el timeline antes de agregar tareas pendientes
+  const esperarTimeline = setInterval(() => {
+    const timeline = document.getElementById("timeline-container");
+    if (timeline) {
+      clearInterval(esperarTimeline);
+
+      if (window.tareasPendientes && window.tareasPendientes.length > 0) {
+        window.tareasPendientes.forEach(t => agregarTareaAreaPersonal(t));
+        window.tareasPendientes = [];
+      }
+    }
+  }, 300); // revisa cada 300ms hasta que exista el contenedor
+});
+
+
 
   linkCursos.addEventListener("click", (e) => {
     e.preventDefault();
@@ -71,9 +87,16 @@ socket.on("nueva-tarea", (tarea) => {
   contador.style.display = "inline-block";
 
   // Mostrar también en el área personal si está activa
-  if (linkArea.classList.contains("active")) {
-    agregarTareaAreaPersonal(tarea);
-  }
+  // Mostrar también en el área personal
+if (linkArea.classList.contains("active")) {
+  // Si el área personal ya está visible
+  agregarTareaAreaPersonal(tarea);
+} else {
+  // Guardar la tarea para mostrarla cuando el usuario entre
+  if (!window.tareasPendientes) window.tareasPendientes = [];
+  window.tareasPendientes.push(tarea);
+}
+
 });
 
 
@@ -82,26 +105,27 @@ function agregarTareaAreaPersonal(tarea) {
   // Buscar el contenedor de la línea de tiempo
   const timeline = document.getElementById("timeline-container");
 
-  // Si el usuario aún no ha abierto área personal, no hacemos nada
   if (!timeline) {
     console.warn("⏳ Timeline no cargado todavía, se agregará cuando abra el área personal.");
     return;
   }
 
-  // Crear un nuevo bloque para la tarea
+  // Crear un nuevo bloque completo con detalles
   const item = document.createElement("div");
   item.className = "timeline-item";
   item.innerHTML = `
-    <p class="timeline-date">${tarea.fecha}</p>
-    <p class="timeline-task">${tarea.titulo}</p>
-    <span class="timeline-course">${tarea.curso}</span>
-    <button>Vista</button>
+    <p class="timeline-date"><strong>📅 Fecha de publicación:</strong> ${tarea.fecha}</p>
+    <p class="timeline-task"><strong>📝 Tarea:</strong> ${tarea.titulo}</p>
+    <p><strong>📘 Curso:</strong> ${tarea.curso}</p>
+    <p><strong>🗓 Fecha límite:</strong> ${tarea.fechaLimite}</p>
+    <p><strong>📄 Descripción:</strong> ${tarea.descripcion}</p>
+    ${tarea.material ? `<p><strong>📎 Material:</strong> <a href="${tarea.material}" target="_blank">Ver archivo</a></p>` : ""}
+    <button class="ver-tarea-btn">Ver detalles</button>
   `;
 
-  // Insertar al principio (la tarea más reciente arriba)
+  // Insertar al principio (nueva tarea arriba)
   timeline.prepend(item);
 }
-
 
   // -------------------- CARGAR FOOTER -------------------- //
   fetch("footer.html")
