@@ -1,27 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel del Docente (Publisher)</title>
+
+    <!-- CSS compartido con estudiantes -->
+    <link rel="stylesheet" href="estudiante.css">
+     <link rel="stylesheet" href="area-personal.css">
     <link rel="stylesheet" href="/style.css"> 
+
 </head>
 <body>
-
-    <header class="navbar">
-        <div class="nav-left">
-            <a href="#" class="nav-brand">E-LEARNING</a>
-            <a href="#" class="nav-link">Área personal</a>
-            <a href="#" class="nav-link active">Mis cursos</a>
+      <!-- HEADER unificado con el diseño de estudiantes -->
+    <header class="main-header">
+        <div class="header-left">
+            <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+            <span class="site-title">E-LEARNING</span>
         </div>
-        <div class="nav-right">
-            <span class="nav-user">DOCENTE: Lesly Alejandra Chamba Guayasamin</span>
-            <div class="nav-avatar">L</div>
+
+        <nav class="header-nav">
+            <a href="#" class="nav-item" id="link-area">Área personal</a>
+            <a href="#" class="nav-item active" id="link-cursos">Mis cursos</a>
+        </nav>
+
+        <div class="header-right">
+            <!-- Icono de Notificación -->
+            <div class="notification-icon-container">
+                <i class="fas fa-bell notification-icon" id="bell-icon"></i>
+                <span class="notification-counter" id="notification-counter">0</span>
+
+                <div class="notification-dropdown" id="notification-dropdown">
+                    <h4>Notificaciones</h4>
+                    <div id="notificaciones-lista">
+                        <p class="empty-message">No hay notificaciones nuevas.</p>
+                    </div>
+                    <a href="#" class="view-all">Ver todas</a>
+                </div>
+            </div>
+
+            <!-- Usuario -->
+            <div class="user-section">
+  <span class="user-name" id="user-name">LESLY ALEJANDRA CHAMBA GUAYASAMIN</span>
+  <div class="user-avatar" id="user-avatar"></div>
+  <div class="user-menu" id="user-menu">
+    <button id="logout-btn">Salir</button>
+  </div>
+</div>
+
         </div>
     </header>
+
 
     <main class="content-area">
         
         <div class="content-header">
-            <h1>Mis Cursos (Gestión)</h1>
+            <h1>Mis Cursos</h1>
             <p>Selecciona un curso para agregar tareas, enviar avisos o gestionar materiales.</p>
         </div>
         
