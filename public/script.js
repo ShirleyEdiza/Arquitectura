@@ -86,78 +86,144 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // -------------------- ESCUCHAR NUEVAS TAREAS -------------------- //
-    socket.on("nueva-tarea", (tarea) => {
-        console.log("📩 Nueva tarea recibida:", tarea);
+  // -------------------- ESCUCHAR NUEVAS TAREAS -------------------- //
+socket.on("nueva-tarea", (tarea) => {
+    console.log("📩 Nueva tarea recibida:", tarea);
 
-        // --- CORRECCIÓN DE HORA AQUÍ (para la campanita) ---
-        let fechaLimiteFormateadaCampana = 'No especificada';
-        if (tarea.fechaLimite) {
-            fechaLimiteFormateadaCampana = new Date(tarea.fechaLimite).toLocaleString('es-EC', {
-                dateStyle: 'short', // Ej: "30/10/25"
-                timeStyle: 'short'  // Ej: "10:00 AM"
-            });
-        }
-        // --- FIN CORRECCIÓN ---
+    // 🔍 Verificar y asignar curso si no viene definido
+    if (!tarea.cursoNombre || tarea.cursoNombre === "undefined") {
+        const cursosDocente = ["Software de Arquitectura", "Redes y Conectividad", "Base de Datos"];
+        const cursosEstudiante = [
+            "Software de Arquitectura",
+            "Base de Conocimiento",
+            "Integración de Sistemas",
+            "Inteligencia Artificial",
+            "Desarrollo Web Avanzado",
+            "Gestión de Proyectos"
+        ];
 
-        // Mensaje para la campanita (usa la fecha formateada)
-        const mensaje = `Nueva tarea en ${tarea.cursoNombre}: ${tarea.titulo} (Entrega: ${fechaLimiteFormateadaCampana})`;
-        publicarNotificacion(mensaje);
+        const cursoComun = cursosDocente.find(curso => cursosEstudiante.includes(curso));
+        tarea.cursoNombre = cursoComun || "Curso no identificado";
+    }
 
-        // Mostrar el contador en rojo
-        if (contador) {
-            contador.textContent = notificaciones.length;
-            contador.style.display = "inline-block"; // Asegura que sea visible
-        }
+    // --- CORRECCIÓN DE HORA (para la campanita) ---
+    let fechaLimiteFormateadaCampana = "No especificada";
+    if (tarea.fechaLimite) {
+        fechaLimiteFormateadaCampana = new Date(tarea.fechaLimite).toLocaleString("es-EC", {
+            dateStyle: "short",
+            timeStyle: "short",
+        });
+    }
 
-        // Mostrar también en el área personal si está activa
-        if (linkArea && linkArea.classList.contains("active")) {
-            // Si el área personal ya está visible
-            agregarTareaAreaPersonal(tarea);
-        } else {
-            // Guardar la tarea para mostrarla cuando el usuario entre
-            if (!window.tareasPendientes) window.tareasPendientes = [];
-            window.tareasPendientes.push(tarea);
-        }
-    });
+    // 💬 Mensaje para la campanita
+    const mensaje = `📘 Nueva tarea en ${tarea.cursoNombre}: ${tarea.titulo} 🗓 Entrega: ${fechaLimiteFormateadaCampana}`;
+    publicarNotificacion(mensaje);
 
+    // 🔴 Mostrar el contador en rojo
+    if (contador) {
+        contador.textContent = notificaciones.length;
+        contador.style.display = "inline-block";
+    }
+
+    // 🧩 Mostrar también en el área personal si está activa
+    if (linkArea && linkArea.classList.contains("active")) {
+        agregarTareaAreaPersonal(tarea);
+    } else {
+        if (!window.tareasPendientes) window.tareasPendientes = [];
+        window.tareasPendientes.push(tarea);
+    }
+
+    // ---------------- Guardar también para "Ver todas" ----------------
+    if (!window.tareasNotificacionesGlobal) window.tareasNotificacionesGlobal = [];
+    window.tareasNotificacionesGlobal.push(tarea);
+});
 
     // -------------------- FUNCIÓN PARA MOSTRAR EN ÁREA PERSONAL -------------------- //
     function agregarTareaAreaPersonal(tarea) {
-        const timeline = document.getElementById("timeline-container");
+    const timeline = document.getElementById("timeline-container");
 
-        if (!timeline) {
-            console.warn("⏳ Timeline no cargado todavía, se agregará cuando abra el área personal.");
-            return;
-        }
+    if (!timeline) return;
 
-        // --- CORRECCIÓN DE HORA AQUÍ (para el Área Personal) ---
-        let fechaLimiteFormateadaArea = 'No especificada';
-        if (tarea.fechaLimite) {
-            fechaLimiteFormateadaArea = new Date(tarea.fechaLimite).toLocaleString('es-EC', {
-                dateStyle: 'long',  // Ej: "30 de octubre de 2025"
-                timeStyle: 'short'  // Ej: "10:00 AM"
-            });
-        }
-        let fechaPublicacionFormateada = new Date().toLocaleDateString('es-EC', { dateStyle: 'long' }); // Usa la fecha actual como publicación
-        // --- FIN CORRECCIÓN ---
+    let fechaLimiteFormateadaArea = 'No especificada';
+    if (tarea.fechaLimite) {
+        fechaLimiteFormateadaArea = new Date(tarea.fechaLimite).toLocaleString('es-EC', {
+            dateStyle: 'long',
+            timeStyle: 'short'
+        });
+    }
+    let fechaPublicacionFormateada = new Date().toLocaleDateString('es-EC', { dateStyle: 'long' });
 
+    const item = document.createElement("div");
+    item.className = "timeline-item";
 
-        const item = document.createElement("div");
-        item.className = "timeline-item";
+    item.innerHTML = `
+        <p class="timeline-date"><strong>📅 Fecha de publicación:</strong> ${fechaPublicacionFormateada}</p>
+        <p class="timeline-task"><strong>📝 Tarea:</strong> ${tarea.titulo}</p>
+        <p><strong>📘 Curso:</strong> ${tarea.cursoNombre}</p>
+        <p><strong>🗓 Fecha límite:</strong> ${fechaLimiteFormateadaArea}</p> 
+        <p><strong>📄 Descripción:</strong> ${tarea.descripcion || "Sin descripción."}</p>
+        ${tarea.material ? `<p><strong>📎 Material:</strong> ${tarea.material}</p>` : ""}
+        <button class="ver-tarea-btn">Ver detalles</button>
+    `;
 
-        // Ahora, usa la variable corregida en el innerHTML
-        item.innerHTML = `
-            <p class="timeline-date"><strong>📅 Fecha de publicación:</strong> ${fechaPublicacionFormateada}</p>
-            <p class="timeline-task"><strong>📝 Tarea:</strong> ${tarea.titulo}</p>
-            <p><strong>📘 Curso:</strong> ${tarea.cursoNombre}</p>
-            <p><strong>🗓 Fecha límite:</strong> ${fechaLimiteFormateadaArea}</p> <p><strong>📄 Descripción:</strong> ${tarea.descripcion || "Sin descripción."}</p>
-            ${tarea.material ? `<p><strong>📎 Material:</strong> ${tarea.material}</p>` : ""}
-            <button class="ver-tarea-btn">Ver detalles</button>
+    timeline.prepend(item);
+
+    // ===== Evento para "Ver detalles" =====
+    const btn = item.querySelector(".ver-tarea-btn");
+    if (btn) {
+        btn.addEventListener("click", () => {
+    // Determinar la página según el curso
+    let paginaCurso = "";
+    switch (tarea.cursoNombre) {
+        case "Software de Arquitectura":
+            paginaCurso = "curso-arquitectura.html";
+            break;
+        case "Gestión de Proyectos de Software":
+            paginaCurso = "gestion.html";
+            break;
+        default:
+            paginaCurso = "mis-cursos.html";
+    }
+
+    // Cargar el curso
+    cargarContenido(paginaCurso);
+
+    // Esperar a que se cargue la sección de tareas
+    const esperarTareas = setInterval(() => {
+    // Buscar la sección de tareas específicamente
+    const seccionTareas = Array.from(document.querySelectorAll(".course-contents"))
+        .find(sec => sec.querySelector("h3")?.textContent.includes("📝 Tareas"));
+
+    if (seccionTareas) {
+        clearInterval(esperarTareas);
+
+        // Crear la tarea
+        const nuevaTarea = document.createElement("article");
+        nuevaTarea.className = "task-item";
+        nuevaTarea.innerHTML = `
+            <h4 class="task-title"><i class="fas fa-file-alt"></i> ${tarea.titulo}</h4>
+            <p class="task-description">${tarea.descripcion || "Sin descripción."}</p>
+            <p class="task-date">Entrega: ${fechaLimiteFormateadaArea}</p>
         `;
 
-        timeline.prepend(item);
+        // Insertar al inicio de las tareas existentes
+        const primeraExistente = seccionTareas.querySelector(".task-item");
+        if (primeraExistente) {
+            seccionTareas.insertBefore(nuevaTarea, primeraExistente);
+        } else {
+            seccionTareas.appendChild(nuevaTarea);
+        }
+
+        // Scroll opcional
+        nuevaTarea.scrollIntoView({ behavior: "smooth" });
     }
+}, 300);
+
+});
+
+    }
+}
+
 
     // -------------------- CARGAR FOOTER -------------------- //
     const footerContainer = document.getElementById("footer-container");
@@ -258,6 +324,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 // ... Añade aquí los otros casos para cada curso ...
                 case "GESTIÓN DE PROYECTOS": pagina = "gestion.html"; break;
                 // default: console.warn("No se encontró página para el curso:", titulo); break;
+                case "BASES DE CONOCIMIENTO":
+                pagina = "curso-bases.html";
+                break;
+
+            case "INTEGRACIÓN DE SISTEMAS":
+                pagina = "curso-integracion.html";
+                break;
+
+            case "INTELIGENCIA ARTIFICIAL":
+                pagina = "curso-ia.html";
+                break;
+
+            case "DESARROLLO WEB AVANZADO":
+                pagina = "curso-desarrollo.html";
+                break;
             }
 
             if (pagina) {
