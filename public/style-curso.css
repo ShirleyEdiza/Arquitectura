@@ -236,7 +236,7 @@ main.content-area {
     border-radius: 4px;
 }
 #form-tarea button {
-    background: #28a745;
+    background: #007bff;
     color: white;
     border: none;
     padding: 12px 18px;
@@ -245,8 +245,8 @@ main.content-area {
     font-size: 1em;
     font-weight: 600;
 }
-#form-tarea button:hover { background: #218838; }
-#status { font-style: italic; color: #28a745; margin-top: 15px; }
+#form-tarea button:hover { background: #007bff; }
+#status { font-style: italic; color: #007bff; margin-top: 15px; }
 
 /* --- 6. ESTILOS DEL FOOTER (EL QUE PARECE IMAGEN) --- */
 .main-footer-bottom {
@@ -362,7 +362,7 @@ main.content-area {
 }
 .review-icon .fa-file-code { color: #007bff; }
 .review-icon .fa-database { color: #d9534f; }
-.review-icon .fa-network-wired { color: #28a745; }
+.review-icon .fa-network-wired { color: #0056b3; }
 .review-icon .fa-link { color: #17a2b8; }
 .review-icon .fa-bullhorn { color: #ffc107; }
 
@@ -419,7 +419,7 @@ main.content-area {
 .btn-review {
     display: block;
     text-decoration: none;
-    background-color: #28a745; /* Verde */
+    background-color: #0056b3; /* Verde */
     color: white;
     padding: 8px 10px;
     border-radius: 4px;
@@ -428,7 +428,7 @@ main.content-area {
     transition: background-color 0.2s;
 }
 .btn-review:hover {
-    background-color: #218838;
+    background-color: #0056b3;
 }
 
 /* Botón "Calificado" */
