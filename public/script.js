@@ -94,12 +94,8 @@ socket.on("nueva-tarea", (tarea) => {
     if (!tarea.cursoNombre || tarea.cursoNombre === "undefined") {
         const cursosDocente = ["Software de Arquitectura", "Redes y Conectividad", "Base de Datos"];
         const cursosEstudiante = [
-            "Software de Arquitectura",
-            "Base de Conocimiento",
-            "Integración de Sistemas",
+            "Redes",
             "Inteligencia Artificial",
-            "Desarrollo Web Avanzado",
-            "Gestión de Proyectos"
         ];
 
         const cursoComun = cursosDocente.find(curso => cursosEstudiante.includes(curso));
@@ -137,13 +133,16 @@ socket.on("nueva-tarea", (tarea) => {
     if (!window.tareasNotificacionesGlobal) window.tareasNotificacionesGlobal = [];
     window.tareasNotificacionesGlobal.push(tarea);
 });
-
-    // -------------------- FUNCIÓN PARA MOSTRAR EN ÁREA PERSONAL -------------------- //
-    function agregarTareaAreaPersonal(tarea) {
+// -------------------- FUNCIÓN PARA MOSTRAR EN ÁREA PERSONAL -------------------- //
+function agregarTareaAreaPersonal(tarea) {
     const timeline = document.getElementById("timeline-container");
 
-    if (!timeline) return;
+    if (!timeline) {
+        console.warn("⏳ Timeline no cargado todavía, se agregará cuando abra el área personal.");
+        return;
+    }
 
+    // --- CORRECCIÓN DE HORA AQUÍ (para el Área Personal) ---
     let fechaLimiteFormateadaArea = 'No especificada';
     if (tarea.fechaLimite) {
         fechaLimiteFormateadaArea = new Date(tarea.fechaLimite).toLocaleString('es-EC', {
@@ -152,76 +151,23 @@ socket.on("nueva-tarea", (tarea) => {
         });
     }
     let fechaPublicacionFormateada = new Date().toLocaleDateString('es-EC', { dateStyle: 'long' });
+    // --- FIN CORRECCIÓN ---
 
     const item = document.createElement("div");
     item.className = "timeline-item";
 
+    // Ahora, agregamos data-curso al botón
     item.innerHTML = `
         <p class="timeline-date"><strong>📅 Fecha de publicación:</strong> ${fechaPublicacionFormateada}</p>
         <p class="timeline-task"><strong>📝 Tarea:</strong> ${tarea.titulo}</p>
         <p><strong>📘 Curso:</strong> ${tarea.cursoNombre}</p>
-        <p><strong>🗓 Fecha límite:</strong> ${fechaLimiteFormateadaArea}</p> 
+        <p><strong>🗓 Fecha límite:</strong> ${fechaLimiteFormateadaArea}</p>
         <p><strong>📄 Descripción:</strong> ${tarea.descripcion || "Sin descripción."}</p>
         ${tarea.material ? `<p><strong>📎 Material:</strong> ${tarea.material}</p>` : ""}
-        <button class="ver-tarea-btn">Ver detalles</button>
+        <button class="ver-tarea-btn" data-curso="${tarea.cursoNombre}">Ver detalles</button>
     `;
 
     timeline.prepend(item);
-
-    // ===== Evento para "Ver detalles" =====
-    const btn = item.querySelector(".ver-tarea-btn");
-    if (btn) {
-        btn.addEventListener("click", () => {
-    // Determinar la página según el curso
-    let paginaCurso = "";
-    switch (tarea.cursoNombre) {
-        case "Software de Arquitectura":
-            paginaCurso = "curso-arquitectura.html";
-            break;
-        case "Gestión de Proyectos de Software":
-            paginaCurso = "gestion.html";
-            break;
-        default:
-            paginaCurso = "mis-cursos.html";
-    }
-
-    // Cargar el curso
-    cargarContenido(paginaCurso);
-
-    // Esperar a que se cargue la sección de tareas
-    const esperarTareas = setInterval(() => {
-    // Buscar la sección de tareas específicamente
-    const seccionTareas = Array.from(document.querySelectorAll(".course-contents"))
-        .find(sec => sec.querySelector("h3")?.textContent.includes("📝 Tareas"));
-
-    if (seccionTareas) {
-        clearInterval(esperarTareas);
-
-        // Crear la tarea
-        const nuevaTarea = document.createElement("article");
-        nuevaTarea.className = "task-item";
-        nuevaTarea.innerHTML = `
-            <h4 class="task-title"><i class="fas fa-file-alt"></i> ${tarea.titulo}</h4>
-            <p class="task-description">${tarea.descripcion || "Sin descripción."}</p>
-            <p class="task-date">Entrega: ${fechaLimiteFormateadaArea}</p>
-        `;
-
-        // Insertar al inicio de las tareas existentes
-        const primeraExistente = seccionTareas.querySelector(".task-item");
-        if (primeraExistente) {
-            seccionTareas.insertBefore(nuevaTarea, primeraExistente);
-        } else {
-            seccionTareas.appendChild(nuevaTarea);
-        }
-
-        // Scroll opcional
-        nuevaTarea.scrollIntoView({ behavior: "smooth" });
-    }
-}, 300);
-
-});
-
-    }
 }
 
 
@@ -320,25 +266,11 @@ socket.on("nueva-tarea", (tarea) => {
             let pagina = "";
             // Lógica para determinar qué archivo cargar
             switch (titulo) {
-                case "SOFTWARE DE ARQUITECTURA": pagina = "curso-arquitectura.html"; break;
+                case "INTELIGENCIA ARTIFICIAL": pagina = "curso-ia.html"; break;
                 // ... Añade aquí los otros casos para cada curso ...
-                case "GESTIÓN DE PROYECTOS": pagina = "gestion.html"; break;
+                case "REDES": pagina = "redes.html"; break;
                 // default: console.warn("No se encontró página para el curso:", titulo); break;
-                case "BASES DE CONOCIMIENTO":
-                pagina = "curso-bases.html";
-                break;
-
-            case "INTEGRACIÓN DE SISTEMAS":
-                pagina = "curso-integracion.html";
-                break;
-
-            case "INTELIGENCIA ARTIFICIAL":
-                pagina = "curso-ia.html";
-                break;
-
-            case "DESARROLLO WEB AVANZADO":
-                pagina = "curso-desarrollo.html";
-                break;
+                
             }
 
             if (pagina) {
@@ -348,5 +280,11 @@ socket.on("nueva-tarea", (tarea) => {
             }
         }
     });
+
+    // -------------------- VER TODAS LAS NOTIFICACIONES -------------------- //
+
+
+
+
 
 }); 
