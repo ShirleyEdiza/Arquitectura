@@ -20,59 +20,47 @@
   <script src="/js/config.js"></script>
   <script>
     document.getElementById("btnLogin").addEventListener("click", async () => {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-      console.log("🔐 Intentando login con:", email);
+        console.log("🔐 Intentando login con:", email);
 
-      if (!email || !password) {
-        alert("Por favor completa todos los campos");
-        return;
-      }
-
-      try {
-        const response = await fetch("/login", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json" 
-          },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.mensaje || "Credenciales incorrectas");
-          return;
+        if (!email || !password) {
+            alert("Por favor completa todos los campos");
+            return;
         }
 
-        console.log("✅ Login exitoso:", data);
-        
-        // Guardar información del usuario en localStorage
-        localStorage.setItem('usuario', JSON.stringify({
-          id: data.id,
-          nombre: data.nombre,
-          rol: data.rol,
-          email: email
-        }));
+        try {
+            // Usar el servicio API de NestJS
+            const data = await window.apiService.login({ email, password });
 
-        if (data.rol.toLowerCase() === "docente") {
-          window.location.href = "docente.html";
-        } else {
-          window.location.href = "estudiante.html";
+            console.log("✅ Login exitoso:", data);
+            
+            // Guardar información del usuario en localStorage
+            localStorage.setItem('usuario', JSON.stringify({
+                id: data.id,
+                nombre: data.nombre,
+                rol: data.rol,
+                email: email
+            }));
+
+            if (data.rol.toLowerCase() === "docente") {
+                window.location.href = "docente.html";
+            } else {
+                window.location.href = "estudiante.html";
+            }
+        } catch (error) {
+            console.error("❌ Error en login:", error);
+            alert("Credenciales incorrectas o error de conexión");
         }
-      } catch (error) {
-        console.error("❌ Error en login:", error);
-        alert("Error de conexión con el servidor. Verifica que el servidor esté ejecutándose.");
-      }
     });
 
     // Permitir login con Enter
     document.getElementById("password").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        document.getElementById("btnLogin").click();
-      }
+        if (e.key === "Enter") {
+            document.getElementById("btnLogin").click();
+        }
     });
-  </script>
+</script>
 </body>
 </html>

@@ -230,28 +230,57 @@
         }
     ];
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         const reviewList = document.getElementById('review-list');
         const cleanupMessage = document.getElementById('cleanup-message');
         
         // ====================================================================
-        // === LÓGICA DE CARGA Y LIMPIEZA DE TAREAS (Tu código original) ===
+        // === LÓGICA DE CARGA DESDE BACKEND NESTJS ===
         // ====================================================================
         
-        const tareasGuardADAS = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
-        
-        if (tareasGuardADAS.length === 0) {
-            localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA));
-            cargarTareas();
-        } else {
-            cargarTareas();
-            mostrarMensajeLimpieza();
+        try {
+            // Obtener tareas del backend
+            const tareas = await window.apiService.obtenerTareas();
+            console.log('📥 Tareas cargadas del backend:', tareas);
+            
+            if (tareas && tareas.length > 0) {
+                // Limpiar lista
+                reviewList.innerHTML = '';
+                
+                // Mostrar tareas del backend
+                tareas.forEach(tarea => {
+                    mostrarTareaPorRevisar({
+                        taskId: tarea.id_tarea,
+                        titulo: tarea.titulo,
+                        cursoNombre: tarea.nombre_curso || 'Curso no especificado',
+                        descripcion: tarea.descripcion,
+                        sala: obtenerSalaDesdeCurso(tarea.nombre_curso),
+                        fechaLimite: tarea.fecha_limite && tarea.hora_limite 
+                            ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
+                            : null,
+                        material: tarea.archivo_material
+                    });
+                });
+                
+                // Ocultar mensaje de limpieza si hay datos reales
+                cleanupMessage.innerHTML = '';
+                
+            } else {
+                // No hay tareas en el backend, cargar desde localStorage
+                console.log('📝 No hay tareas en backend, cargando desde localStorage...');
+                cargarTareasLocales();
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando tareas del backend:', error);
+            // Fallback a datos locales si hay error
+            cargarTareasLocales();
         }
 
         // ====================================================================
-        // === LÓGICA DE BORRADO: Event Delegation (Tu código original) ===
+        // === LÓGICA DE BORRADO: Event Delegation ===
         // ====================================================================
-        reviewList.addEventListener('click', (e) => {
+        reviewList.addEventListener('click', async (e) => {
             const deleteButton = e.target.closest('.btn-delete-task');
             
             if (!deleteButton) {
@@ -266,13 +295,26 @@
 
             const taskId = deleteButton.dataset.taskId;
             
+            try {
+                // Intentar eliminar del backend primero
+                // NOTA: Necesitarías implementar un endpoint DELETE en tu backend
+                console.log('🗑️ Intentando eliminar tarea ID:', taskId);
+                
+                // Por ahora solo eliminamos del frontend
+                // await window.apiService.eliminarTarea(taskId);
+                
+            } catch (error) {
+                console.error('Error eliminando tarea del backend:', error);
+            }
+
+            // Eliminar del localStorage como fallback
             let currentTareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
             currentTareas = currentTareas.filter(t => t.taskId.toString() !== taskId);
             localStorage.setItem('tareasDocente', JSON.stringify(currentTareas));
 
             deleteButton.closest('li.review-item').remove();
             
-            if (currentTareas.length === 0) {
+            if (reviewList.children.length === 0) {
                 mostrarMensajeVacio();
             }
         });
@@ -285,9 +327,23 @@
         });
         
         // ====================================================================
-        // === Funciones Auxiliares (Tu código original) ===
+        // === FUNCIONES AUXILIARES ACTUALIZADAS ===
         // ====================================================================
-        function cargarTareas() {
+        
+        // Función para cargar tareas locales (fallback)
+        function cargarTareasLocales() {
+            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+            
+            if (tareasGuardadas.length === 0) {
+                localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA));
+                cargarTareasDesdeLocalStorage();
+            } else {
+                cargarTareasDesdeLocalStorage();
+                mostrarMensajeLimpieza();
+            }
+        }
+        
+        function cargarTareasDesdeLocalStorage() {
             const tareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
             
             if (tareas.length === 0) {
@@ -308,9 +364,8 @@
         function mostrarMensajeLimpieza() {
             cleanupMessage.innerHTML = `
                 <div class="notification-bar">
-                    <i class="fas fa-exclamation-triangle"></i> Detectamos tareas guardadas anteriormente.
-                    Si desea ver las tareas de ejemplo, pulse: 
-                    <button class="btn-limpiar">Limpiar y Recargar</button>
+                    <i class="fas fa-exclamation-triangle"></i> Usando datos locales.
+                    <button class="btn-limpiar">Cargar datos de ejemplo</button>
                 </div>
             `;
         }
@@ -319,18 +374,29 @@
             localStorage.removeItem('tareasDocente'); 
             localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA)); 
             cleanupMessage.innerHTML = ''; 
-            cargarTareas(); 
+            cargarTareasDesdeLocalStorage(); 
         }
 
         function mostrarTareaPorRevisar(data) {
             let iconClass = 'fas fa-file-alt';
             if (data.material) iconClass = 'fas fa-paperclip';
-            if (data.sala === 'clase-c') iconClass = 'fas fa-database';
-            if (data.sala === 'clase-b') iconClass = 'fas fa-network-wired';
+            if (data.sala === 'clase-c' || data.cursoNombre?.includes('IA')) iconClass = 'fas fa-database';
+            if (data.sala === 'clase-b' || data.cursoNombre?.includes('Redes')) iconClass = 'fas fa-network-wired';
             if (data.sala === 'clase-a') iconClass = 'fas fa-code'; 
 
             const item = document.createElement('li');
             item.className = 'review-item';
+            
+            // Formatear fecha si existe
+            let fechaInfo = '';
+            if (data.fechaLimite) {
+                try {
+                    const fecha = new Date(data.fechaLimite);
+                    fechaInfo = `<br><small><strong>Límite:</strong> ${fecha.toLocaleDateString('es-EC')}</small>`;
+                } catch (e) {
+                    console.warn('Error formateando fecha:', e);
+                }
+            }
             
             item.innerHTML = `
                 <div class="review-icon">
@@ -340,6 +406,8 @@
                     <span class="review-title">${data.titulo}</span>
                     <span class="review-course">Curso: ${data.cursoNombre}</span>
                     <p class="review-description">${data.descripcion || 'Sin descripción.'}</p>
+                    ${data.material ? `<small><strong>Material:</strong> ${data.material}</small>` : ''}
+                    ${fechaInfo}
                 </div>
                 <div class="review-status">
                     <span class="status-number">0</span>
@@ -353,35 +421,37 @@
             `;
             reviewList.appendChild(item);
         }
+        
+        // Función auxiliar para mapear nombre de curso a sala
+        function obtenerSalaDesdeCurso(nombreCurso) {
+            if (!nombreCurso) return 'clase-a';
+            if (nombreCurso.includes('Redes')) return 'clase-b';
+            if (nombreCurso.includes('IA') || nombreCurso.includes('Inteligencia')) return 'clase-c';
+            return 'clase-a';
+        }
 
-        
         // ===================================================
-        // === 5. LÓGICA DEL MENÚ DESPLEGABLE (AÑADIDO) ===
+        // === LÓGICA DEL MENÚ DESPLEGABLE ===
         // ===================================================
         
-        // 1. Seleccionar los elementos del menú
         const avatarToggle = document.getElementById('user-avatar-toggle');
         const userMenu = document.getElementById('user-menu-dropdown');
         const logoutBtn = document.getElementById('logout-btn');
 
-        // 2. Manejar clic en el avatar (si existen los elementos)
         if (avatarToggle && userMenu && logoutBtn) {
             avatarToggle.addEventListener('click', (e) => {
-                e.stopPropagation(); // Evita que se cierre inmediatamente por el listener de 'window'
+                e.stopPropagation();
                 userMenu.classList.toggle('show');
             });
 
-            // 3. Manejar clic en el botón "Salir"
             logoutBtn.addEventListener('click', () => {
                 console.log("Redirigiendo a login.html...");
-                window.location.href = 'login.html'; // Redirigir a login
+                window.location.href = 'login.html';
             });
         }
 
-        // 4. Cierra el menú si se hace clic fuera de él
         window.addEventListener('click', (e) => {
             if (userMenu && userMenu.classList.contains('show')) {
-                // Si el clic NO fue en el avatar Y NO fue dentro del menú
                 if (!avatarToggle.contains(e.target) && !userMenu.contains(e.target)) {
                     userMenu.classList.remove('show');
                 }
