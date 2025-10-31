@@ -16,14 +16,14 @@
 
     <div id="loginStatus" style="margin-top: 15px;"></div>
 
-    <p class="hint">Usa: lesly@educa.com | shirley@educa.com | Contraseña: 12345</p>
     
     <!-- Botón para probar conexión -->
-    <button id="btnTestConnection" style="background: #28a745; margin-top: 10px;">Probar Conexión</button>
+    <button id="btnTestConnection" style="background: white; margin-top: 10px;">Ingresar</button>
   </div>
 
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/"></script>
   <script>
     // Función para mostrar estados
     function showStatus(message, type) {
@@ -84,12 +84,12 @@
         }
     });
 
+    // En login.html - REEMPLAZA todo el script actual
     document.getElementById("btnLogin").addEventListener("click", async () => {
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value.trim();
 
         console.log("🔐 Intentando login con:", email);
-        console.log("🔧 ApiService disponible:", typeof window.apiService !== 'undefined');
 
         if (!email || !password) {
             showStatus("Por favor completa todos los campos", "error");
@@ -99,24 +99,38 @@
         try {
             showStatus("Conectando...", "loading");
             
-            if (typeof window.apiService === 'undefined') {
-                throw new Error('ApiService no está disponible. Revisa la consola para errores de carga.');
-            }
-
-            const data = await window.apiService.login({ 
-                email: email, 
-                password: password 
+            // Usar el endpoint CORRECTO de NestJS
+            const response = await fetch('http://localhost:3002/api/v1/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correo: email,
+                    contrasena: password
+                })
             });
 
+            console.log('🔍 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Credenciales incorrectas');
+            }
+
+            const data = await response.json();
             console.log("✅ Login exitoso:", data);
             
             // Guardar información del usuario en localStorage
-            localStorage.setItem('usuario', JSON.stringify({
+            const usuario = {
                 id: data.id_usuario,
                 nombre: data.nombre,
                 rol: data.rol,
-                email: data.correo || email
-            }));
+                correo: data.correo || email
+            };
+            
+            localStorage.setItem('usuario', JSON.stringify(usuario));
+            console.log('💾 Usuario guardado en localStorage:', usuario);
 
             showStatus("✅ Login exitoso! Redirigiendo...", "success");
 
@@ -134,6 +148,8 @@
             showStatus(`❌ Error: ${error.message}`, "error");
         }
     });
+
+    // El resto del código de testConnection se mantiene igual
 
     // Permitir login con Enter
     document.getElementById("password").addEventListener("keypress", (e) => {
