@@ -1,12 +1,16 @@
-// js/api.js
+// public/js/api.js
 class ApiService {
     constructor() {
-        this.BASE_URL = window.APP_CONFIG.API_BASE_URL;
+        this.BASE_URL = window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : 'http://localhost:3002/api/v1';
+        console.log('✅ ApiService inicializado con URL:', this.BASE_URL);
     }
 
     async request(endpoint, options = {}) {
         try {
-            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+            const url = `${this.BASE_URL}${endpoint}`;
+            console.log('🌐 Haciendo request a:', url);
+            
+            const response = await fetch(url, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...options.headers
@@ -14,22 +18,33 @@ class ApiService {
                 ...options
             });
 
+            console.log('📨 Response status:', response.status);
+
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Error response:', errorText);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log('✅ Response data:', data);
+            return data;
+
         } catch (error) {
-            console.error('Error en la petición API:', error);
+            console.error('❌ Error en la petición API:', error);
             throw error;
         }
     }
 
     // ========== AUTH ==========
     async login(credenciales) {
+        console.log('🔐 Intentando login con:', credenciales);
         return await this.request('/auth/login', {
             method: 'POST',
-            body: JSON.stringify(credenciales)
+            body: JSON.stringify({
+                correo: credenciales.email,
+                contrasena: credenciales.password
+            })
         });
     }
 
