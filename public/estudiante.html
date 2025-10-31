@@ -7,6 +7,125 @@
   <link rel="stylesheet" href="estudiante.css">
   <link rel="stylesheet" href="area-personal.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Estilos para el resumen de cursos */
+    .resumen-cursos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .curso-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-left: 4px solid #007bff;
+      position: relative;
+    }
+
+    .curso-card h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 1.1em;
+    }
+
+    .curso-card p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .curso-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #007bff;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+    }
+
+    /* Estilos para botones */
+    .btn-ver-detalles {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+
+    .btn-ver-detalles:hover {
+      background: #0056b3;
+    }
+
+    .btn-reload {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-reload:hover {
+      background: #218838;
+    }
+
+    /* Estados de error */
+    .timeline-item.error {
+      border-left-color: #dc3545;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 5px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .no-courses-message {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    /* Mejoras para la timeline */
+    .timeline-course {
+      display: inline-block;
+      background: #e9ecef;
+      color: #495057;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      margin: 5px 0;
+    }
+
+    .timeline-desc {
+      color: #666;
+      font-size: 0.9em;
+      margin: 5px 0;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- CABECERA/NAVBAR -->
@@ -286,27 +405,63 @@
 
       async function inicializarAreaPersonal() {
         try {
-          // Cargar tareas del backend para el timeline
-          const tareas = await window.apiService.consultarTareas({});
-          console.log('📚 Tareas cargadas para área personal:', tareas);
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          
+          if (!usuario.id) {
+            console.error('No se pudo obtener el ID del estudiante');
+            mostrarErrorAreaPersonal('No se pudo identificar al estudiante');
+            return;
+          }
 
-          // Inicializar timeline con las tareas
-          inicializarTimeline(tareas);
+          console.log('🎯 Inicializando área personal para estudiante:', usuario.id);
+
+          // 1. Obtener los cursos del estudiante
+          const cursos = await window.apiService.obtenerCursosDelEstudiante(usuario.id);
+          console.log('📚 Cursos del estudiante:', cursos);
+
+          // 2. Obtener tareas solo de los cursos del estudiante
+          let tareasFiltradas = [];
+          
+          if (cursos && cursos.length > 0) {
+            // Obtener IDs de cursos del estudiante
+            const idsCursos = cursos.map(curso => curso.id_curso);
+            console.log('🎓 IDs de cursos del estudiante:', idsCursos);
+            
+            // Obtener todas las tareas
+            const todasLasTareas = await window.apiService.consultarTareas({});
+            console.log('📝 Todas las tareas disponibles:', todasLasTareas);
+            
+            // Filtrar tareas solo para los cursos del estudiante
+            tareasFiltradas = todasLasTareas.filter(tarea => 
+              idsCursos.includes(tarea.id_curso)
+            );
+            
+            console.log('✅ Tareas filtradas para el estudiante:', tareasFiltradas);
+          } else {
+            console.log('ℹ️ El estudiante no está inscrito en ningún curso');
+          }
+
+          // 3. Inicializar timeline con las tareas filtradas
+          inicializarTimeline(tareasFiltradas, cursos);
 
         } catch (error) {
           console.error('Error inicializando área personal:', error);
+          mostrarErrorAreaPersonal('Error al cargar los datos: ' + error.message);
         }
       }
 
-      function inicializarTimeline(tareas) {
+      function inicializarTimeline(tareas, cursos = []) {
         const timelineContainer = document.getElementById('timeline-container');
         if (!timelineContainer) return;
+
+        // Actualizar también la sección de resumen de cursos
+        actualizarResumenCursos(cursos);
 
         if (!tareas || tareas.length === 0) {
           timelineContainer.innerHTML = `
             <div class="timeline-item">
               <p class="timeline-date">No hay actividades recientes</p>
-              <p class="timeline-task">Las tareas aparecerán aquí cuando sean publicadas</p>
+              <p class="timeline-task">Las tareas aparecerán aquí cuando sean publicadas en tus cursos</p>
             </div>
           `;
           return;
@@ -331,26 +486,130 @@
           return `
             <div class="timeline-item">
               <p class="timeline-date">${fechaPublicacion}</p>
-              <p class="timeline-task">${tarea.titulo}</p>
-              <span class="timeline-course">${obtenerNombreCurso(tarea.id_curso)}</span>
+              <p class="timeline-task"><strong>${tarea.titulo}</strong></p>
+              <span class="timeline-course">${obtenerNombreCurso(tarea.id_curso, cursos)}</span>
               <p><strong>Fecha límite:</strong> ${fechaLimite}</p>
-              <button onclick="verDetallesTarea(${tarea.id_tarea})">Ver detalles</button>
+              <p class="timeline-desc">${tarea.descripcion || 'Sin descripción'}</p>
+              <button onclick="verDetallesTarea(${tarea.id_tarea})" class="btn-ver-detalles">Ver detalles</button>
             </div>
           `;
         }).join('');
       }
 
-      function inicializarMisCursos() {
-        // Aquí puedes inicializar la funcionalidad específica de "Mis Cursos"
-        console.log('Inicializando mis cursos...');
+      function actualizarResumenCursos(cursos) {
+        const resumenCursosContainer = document.getElementById('resumen-cursos');
+        if (!resumenCursosContainer) return;
+
+        if (!cursos || cursos.length === 0) {
+          resumenCursosContainer.innerHTML = `
+            <div class="curso-card">
+              <h4>No estás inscrito en ningún curso</h4>
+              <p>Contacta con tu docente para inscribirte en cursos.</p>
+            </div>
+          `;
+          return;
+        }
+
+        resumenCursosContainer.innerHTML = cursos.map(curso => `
+          <div class="curso-card">
+            <h4>${curso.nombre_curso || `Curso ${curso.id_curso}`}</h4>
+            <p>${curso.descripcion || 'Sin descripción disponible'}</p>
+            <span class="curso-badge">Curso ID: ${curso.id_curso}</span>
+          </div>
+        `).join('');
       }
 
-      function obtenerNombreCurso(idCurso) {
-        const cursos = {
-          1: 'Inteligencia Artificial',
-          2: 'Redes y Conectividad'
-        };
-        return cursos[idCurso] || `Curso ${idCurso}`;
+      function obtenerNombreCurso(idCurso, cursos = []) {
+        // Buscar el nombre del curso en la lista de cursos del estudiante
+        const curso = cursos.find(c => c.id_curso === idCurso);
+        return curso ? curso.nombre_curso : `Curso ${idCurso}`;
+      }
+
+      function mostrarErrorAreaPersonal(mensaje = 'No se pudieron cargar las actividades') {
+        const timelineContainer = document.getElementById('timeline-container');
+        if (timelineContainer) {
+          timelineContainer.innerHTML = `
+            <div class="timeline-item error">
+              <p class="timeline-date">Error</p>
+              <p class="timeline-task">${mensaje}</p>
+              <button onclick="location.reload()" class="btn-reload">Reintentar</button>
+            </div>
+          `;
+        }
+      }
+
+      async function inicializarMisCursos() {
+        try {
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          if (!usuario.id) {
+            mostrarErrorCursos('No se pudo identificar al estudiante');
+            return;
+          }
+
+          console.log('🎓 Inicializando mis cursos para estudiante:', usuario.id);
+
+          // Obtener cursos del estudiante para la página de "Mis Cursos"
+          const cursos = await window.apiService.obtenerCursosDelEstudiante(usuario.id);
+          console.log('📚 Cursos para página Mis Cursos:', cursos);
+          
+          // Actualizar la lista de cursos en la página
+          actualizarListaCursos(cursos);
+
+        } catch (error) {
+          console.error('Error inicializando mis cursos:', error);
+          mostrarErrorCursos('Error al cargar los cursos: ' + error.message);
+        }
+      }
+
+      function actualizarListaCursos(cursos) {
+        const courseList = document.getElementById('course-list');
+        if (!courseList) return;
+
+        if (!cursos || cursos.length === 0) {
+          courseList.innerHTML = `
+            <div class="no-courses-message">
+              <h3>No estás inscrito en ningún curso</h3>
+              <p>Contacta con tu docente para inscribirte en cursos.</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Mostrar solo los cursos del estudiante
+        courseList.innerHTML = cursos.map(curso => {
+          const cursoId = curso.id_curso;
+          const cursoNombre = curso.nombre_curso || `Curso ${cursoId}`;
+          const imagenCurso = cursoId === 1 ? 
+            'https://images.unsplash.com/photo-1594915440248-1e419eba6611?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fHJlZGVzfGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=500' : 
+            'https://plus.unsplash.com/premium_photo-1683121710572-7723bd2e235d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW50ZWxpZ2VuY2lhJTIwYXJ0aWZpY2lhbHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=500';
+
+          return `
+            <article class="course-card">
+              <div class="course-image" style="background-image: url('${imagenCurso}');">
+                <span class="course-progress">0% completado</span>
+              </div>
+              <div class="course-info">
+                <h3 class="course-title">${cursoNombre}</h3>
+                <p class="course-teacher">Docente: Lesly</p>
+                <div class="course-actions">
+                  <button class="action-button view-tasks" onclick="verCurso(${cursoId}, '${cursoNombre}')">Ver Tareas</button>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function mostrarErrorCursos(mensaje) {
+        const courseList = document.getElementById('course-list');
+        if (courseList) {
+          courseList.innerHTML = `
+            <div class="error-message">
+              <p>${mensaje}</p>
+              <button onclick="location.reload()" class="btn-reload">Reintentar</button>
+            </div>
+          `;
+        }
       }
 
       // Cargar el contenido inicial (área personal por defecto)
@@ -393,6 +652,12 @@
       alert(`Mostrando detalles de la tarea ID: ${idTarea}`);
       // En una implementación real, podrías usar:
       // window.location.href = `detalles-tarea.html?id=${idTarea}`;
+    }
+
+    function verCurso(idCurso, nombreCurso) {
+      // Redirigir a la página específica del curso
+      const paginaCurso = idCurso === 1 ? 'redes.html' : 'curso-ia.html';
+      window.location.href = `${paginaCurso}?curso=${idCurso}&nombre=${encodeURIComponent(nombreCurso)}`;
     }
 
     function conectarWebSockets() {
@@ -465,22 +730,6 @@
         toast.remove();
       }, 5000);
     }
-
-    // Añadir estilos para la animación
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-    `;
-    document.head.appendChild(style);
   </script>
 </body>
 </html>

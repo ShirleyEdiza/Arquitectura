@@ -93,6 +93,29 @@ class ApiService {
             body: JSON.stringify(notificacionData)
         });
     }
+ // En api.js - método corregido
+async obtenerCursosDelEstudiante(estudianteId) {
+  try {
+    console.log(`🎓 Solicitando cursos para estudiante: ${estudianteId}`);
+    const response = await fetch(`${this.BASE_URL}/publisher/estudiante/cursos?estudianteId=${estudianteId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const cursos = await response.json();
+    console.log(`✅ Cursos recibidos para estudiante ${estudianteId}:`, cursos);
+    return cursos;
+  } catch (error) {
+    console.error('❌ Error obteniendo cursos del estudiante:', error);
+    throw error;
+  }
+}
 }
 
 // Crear instancia global
