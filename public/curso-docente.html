@@ -1,192 +1,467 @@
-// En curso-docente.html - REEMPLAZA el script actual por este:
-document.addEventListener('DOMContentLoaded', async () => {
-    // --- 1. Conexión y Elementos ---
-    const socket = io('http://192.168.100.41:3002');
-    
-    const modal = document.getElementById('modal-publicar');
-    const modalTitulo = document.getElementById('modal-titulo');
-    const btnCerrar = document.querySelector('.modal-close');
-    const btnAbrirModal = document.getElementById('btn-abrir-modal');
-    const form = document.getElementById('form-tarea');
-    const selectCurso = document.getElementById('select-curso');
-    const inputTitulo = document.getElementById('input-titulo');
-    const statusDiv = document.getElementById('status');
-    const tituloCursoH1 = document.getElementById('titulo-curso');
-    const activityList = document.getElementById('activity-list');
-    
-    let cursoIdGlobal = '';
-    let cursoNombreGlobal = '';
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestionar Curso - Docente</title>
+    <link rel="stylesheet" href="style-curso.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    // --- 2. Lógica al Cargar la Página ---
-    const params = new URLSearchParams(window.location.search);
-    const cursoId = params.get('curso');
-    const cursoNombre = params.get('nombre');
-    
-    if (!cursoId || !cursoNombre) {
-        if (tituloCursoH1) tituloCursoH1.textContent = "Error: Curso no encontrado";
-        if (btnAbrirModal) btnAbrirModal.disabled = true;
-        return; 
-    }
-    
-    cursoIdGlobal = cursoId; 
-    cursoNombreGlobal = cursoNombre;
-    tituloCursoH1.textContent = `Gestionar: ${cursoNombre}`;
-    modalTitulo.textContent = `Publicar en: ${cursoNombre}`;
-    selectCurso.innerHTML = `<option value="1">${cursoNombre}</option>`;
+    <style>
+        /* ======================================================= */
+        /* === 1. MEJORA FOOTER (STICKY) === */
+        /* ======================================================= */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main.content-area {
+            flex-grow: 1; /* Empuja el footer hacia abajo */
+        }
+        .main-header, .main-footer-bottom {
+            flex-shrink: 0;
+        }
 
-    // Cargar tareas existentes
-    await cargarTareasExistentes();
+        /* ======================================================= */
+        /* === 2. ESTILOS FORMULARIO (CON SCROLL) === */
+        /* ======================================================= */
 
-    // --- 3. Lógica Modal ---
-    if (btnAbrirModal) {
-        btnAbrirModal.addEventListener('click', () => { 
-            modal.style.display = 'flex'; 
-        });
-    }
-    
-    const cerrarModal = () => {
-        modal.style.display = 'none';
-        if (form) form.reset();
-    }
-    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                cerrarModal();
-            }
-        });
-    }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-height: 85vh; /* Altura máxima */
+            overflow-y: auto; /* Scroll vertical */
+        }
+        .modal-close {
+            position: absolute; top: 10px; right: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+        #modal-titulo {
+            color: #3f51b5;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
 
-    // --- 4. Lógica de Publicar Tarea - CONEXIÓN REAL AL BACKEND ---
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!inputTitulo.value.trim()) { 
-                alert("El título es obligatorio."); 
-                return; 
-            }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select,
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+            background-color: #f9f9f9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input[type="file"] {
+            padding: 9px;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus,
+        .form-group input[type="date"]:focus,
+        .form-group input[type="time"]:focus,
+        .form-group input[type="file"]:focus {
+            border-color: #3f51b5;
+            box-shadow: 0 0 0 3px rgba(63,81,181,0.1);
+            background-color: #fff;
+            outline: none;
+        }
+        .form-group textarea { resize: vertical; }
+        .split-group { display: flex; gap: 15px; }
+        .split-group > div { flex: 1; }
+
+        #btn-publicar {
+            width: 100%;
+            padding: 12px;
+            background-color:  #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        #btn-publicar:hover { background-color: #007bff; }
+        #status { color: #007bff; font-weight: 500; }
+
+        /* ======================================================= */
+        /* === 3. MEJORA BOTÓN SALIR (Menú Desplegable) === */
+        /* ======================================================= */
+        .user-section {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            cursor: pointer;
+            width: 36px; height: 36px; background: #007bff; color: white;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: 600;
+        }
+        .user-menu {
+            display: none; position: absolute; top: 50px; right: 0;
+            background: white; border: 1px solid #ddd;
+            border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000; width: 150px;
+        }
+        .user-menu.show { display: block; }
+        .user-menu button {
+            background: none; border: none; color: #d9534f;
+            padding: 10px 20px; width: 100%; text-align: left;
+            cursor: pointer;
+        }
+        .user-menu button:hover { background: #f9f9f9; }
+
+        /* Estilos de tus tareas (los tenías en el script) */
+        .activity-item {
+            display: flex; align-items: flex-start; background-color: white;
+            border: 1px solid #ddd; border-left: 5px solid #007bff;
+            margin-bottom: 15px; padding: 15px; border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .activity-icon { font-size: 2em; color: #3f51b5; margin-right: 20px; padding-top: 5px; }
+        .activity-content { flex-grow: 1; }
+        .activity-title { font-weight: 600; font-size: 1.2em; color: #333; display: block; margin-bottom: 5px; }
+        .activity-description { color: #555; margin: 5px 0 10px 0; }
+        .activity-meta { font-size: 0.9em; color: #777; margin-top: 5px; }
+        .activity-material-file {
+            font-size: 0.9em;
+            color: #d9534f;
+            margin-top: 5px;
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #f7e6e6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+            <span class="site-title">E-LEARNING</span>
+        </div>
+        <nav class="header-nav">
+            <a href="/area-personal-docente.html" class="nav-item" id="link-area">Área personal</a>
+            <a href="/docente.html" class="nav-item" id="link-cursos">Mis cursos</a>
+        </nav>
+        <div class="header-right">
+            <div class="user-section">
+                <span class="user-name" id="user-name">Lesly Chamba Guayasamin</span>
+                <div class="user-avatar" id="user-avatar">LC</div>
+                <div class="user-menu" id="user-menu">
+                    <button id="logout-btn">Salir</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-area">
+        <div class="content-header">
+            <h1 id="titulo-curso">Cargando...</h1>
+            <button id="btn-abrir-modal" class="btn-gestionar" style="background-color: #007bff; width: 250px;">
+                <i class="fas fa-plus"></i> Agregar Tarea / Aviso
+            </button>
+        </div>
+
+        <section id="lista-tareas-publicadas" class="topic-section">
+            <h3><i class="fas fa-tasks"></i> Tareas y Anuncios</h3>
+            <ul id="activity-list">
+                </ul>
+        </section>
+    </main>
+
+    <div id="modal-publicar" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2 id="modal-titulo">Publicar en...</h2>
+
+           <form id="form-tarea" class="panel-body" style="padding: 0; box-shadow: none;">
+                <div class="form-group">
+                    <label for="input-titulo">Título de la Tarea o Aviso:</label>
+                    <input type="text" id="input-titulo" placeholder="Ej: Tarea 1 - Diagrama de Clases" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-desc">Descripción:</label>
+                    <textarea id="input-desc" rows="4" placeholder="Detalles de la tarea..."></textarea>
+                </div>
+
+                <div class="form-group split-group">
+                    <div style="flex-grow: 2;">
+                        <label for="input-fecha">Fecha Límite:</label>
+                        <input type="date" id="input-fecha">
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <label for="input-hora">Hora Límite:</label>
+                        <input type="time" id="input-hora">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-file">Subir Material (Opcional):</label>
+                    <input type="file" id="input-file">
+                </div>
+
+                <button type="submit" id="btn-publicar">Publicar Ahora</button>
+                <div id="status" style="margin-top: 15px;"></div>
+           </form>
+        </div>
+    </div>
+
+    <footer class="main-footer-bottom">
+        <div class="footer-columns">
+            <div class="footer-column"><h4>E-Learning</h4><p>Aulas virtuales de periodos académicos anteriores:</p><a href="#" class="footer-link">Marzo 2025 - Julio 2025</a></div>
             
-            const fecha = document.getElementById('input-fecha').value;
-            const hora = document.getElementById('input-hora').value;
-            const descripcion = document.getElementById('input-desc').value;
-            
-            try {
-                if (statusDiv) statusDiv.textContent = "⏳ Publicando tarea...";
-                
-                // Crear tarea en el backend
-                const resultado = await window.apiService.crearTarea({
-                    titulo: inputTitulo.value,
-                    descripcion: descripcion,
-                    fecha_limite: fecha || null,
-                    hora_limite: hora || null,
-                    archivo_material: null, // Por ahora sin archivo
-                    id_curso: 1 // ID fijo por simplicidad
-                });
-                
-                if (statusDiv) statusDiv.textContent = "✅ Tarea publicada exitosamente";
-                
-                // También emitir via socket para notificaciones en tiempo real
-                socket.emit('publicar-tarea', {
-                    sala: cursoIdGlobal,
-                    titulo: inputTitulo.value,
-                    descripcion: descripcion,
-                    fechaLimite: fecha ? new Date(`${fecha}T${hora}:00`).toISOString() : null,
-                    cursoNombre: cursoNombreGlobal
-                });
-                
-                // Agregar a la lista local
-                mostrarTareaPublicada({
-                    titulo: inputTitulo.value,
-                    descripcion: descripcion,
-                    fecha_limite: fecha,
-                    hora_limite: hora,
-                    nombre_curso: cursoNombreGlobal
-                });
-                
-                setTimeout(cerrarModal, 1500);
-                
-            } catch (error) {
-                console.error('Error al publicar tarea:', error);
-                if (statusDiv) statusDiv.textContent = "❌ Error al publicar tarea";
+            <div class="footer-column">
+                <h4>Mis Cursos (Bloques)</h4>
+                <a href="/curso-docente.html?curso=clase-b&nombre=Redes" class="footer-link">Redes</a>
+                <a href="/curso-docente.html?curso=clase-c&nombre=INTELIGENCIA%20ARTIFICIAL" class="footer-link">Inteligencia Artificial</a>
+            </div>
+            </div>
+        <div class="footer-copyright"><p>© 2025 E-Learning. Todos los derechos reservados.</p></div>
+        <a href="#" id="scroll-to-top" class="scroll-top-btn"><i class="fas fa-arrow-up"></i></a>
+    </footer>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        // Mover TODO dentro del DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. Conexión y Elementos ---
+            let socket;
+            if (typeof io !== 'undefined') {
+                socket = io();
+            } else {
+                console.warn("Socket.io no está cargado.");
+                socket = {
+                    emit: (event, data) => console.log("Socket Falso:", event, data)
+                };
             }
-        });
-    }
 
-    // --- 5. Función para Cargar Tareas Existentes ---
-    async function cargarTareasExistentes() {
-        try {
-            const tareas = await window.apiService.obtenerTareasPorCurso(1); // ID del curso
-            
-            if (activityList && tareas.length > 0) {
-                activityList.innerHTML = '';
-                tareas.forEach(tarea => {
-                    mostrarTareaPublicada(tarea);
+            // Seleccionar elementos DESPUÉS de que el DOM esté listo
+            const modal = document.getElementById('modal-publicar');
+            const modalTitulo = document.getElementById('modal-titulo');
+            const btnCerrar = document.querySelector('.modal-close');
+            const btnAbrirModal = document.getElementById('btn-abrir-modal'); // MOVIDO AQUÍ
+            const form = document.getElementById('form-tarea');
+            // const selectCurso = document.getElementById('select-curso'); // Este ID no existe en el HTML, lo quitamos para evitar errores
+            const inputTitulo = document.getElementById('input-titulo');
+            const statusDiv = document.getElementById('status');
+            const tituloCursoH1 = document.getElementById('titulo-curso');
+            const activityList = document.getElementById('activity-list');
+            const userAvatar = document.getElementById('user-avatar'); // MOVIDO AQUÍ
+            const userMenu = document.getElementById('user-menu');     // MOVIDO AQUÍ
+            const logoutBtn = document.getElementById('logout-btn');   // MOVIDO AQUÍ
+
+
+            let cursoIdGlobal = '';
+            let cursoNombreGlobal = '';
+
+            // --- 2. Lógica al Cargar la Página ---
+            const params = new URLSearchParams(window.location.search);
+            const cursoId = params.get('curso');
+            const cursoNombre = params.get('nombre');
+
+            if (!cursoId || !cursoNombre) {
+                if (tituloCursoH1) tituloCursoH1.textContent = "Error: Curso no encontrado";
+                if (btnAbrirModal) btnAbrirModal.disabled = true;
+                // No retornar aquí para que el menú Salir funcione aunque no haya curso
+            } else {
+                cursoIdGlobal = cursoId;
+                cursoNombreGlobal = cursoNombre;
+                if (tituloCursoH1) tituloCursoH1.textContent = `Gestionar: ${cursoNombre}`;
+                if (modalTitulo) modalTitulo.textContent = `Publicar en: ${cursoNombre}`;
+                
+                // Esta lógica era para un select que ya no existe, la quitamos.
+                // if (selectCurso) {
+                //     selectCurso.innerHTML = `<option value="${cursoId}">${cursoNombre}</option>`;
+                //     selectCurso.value = cursoId;
+                // }
+            }
+
+
+            // --- 3. Lógica Modal ---
+            // Asegurarse de que los elementos existan antes de añadir listeners
+            if (btnAbrirModal && modal) {
+                btnAbrirModal.addEventListener('click', () => {
+                    console.log("Botón 'Agregar Tarea' clickeado!"); // Log para depurar
+                    modal.style.display = 'flex';
+                });
+            } else {
+                console.error("No se encontró el botón para abrir el modal o el modal mismo.");
+            }
+
+            const cerrarModal = () => {
+                if (modal) modal.style.display = 'none';
+                if (form) form.reset();
+                if (statusDiv) statusDiv.textContent = ''; // Limpiar estado
+            }
+            if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        cerrarModal();
+                    }
                 });
             }
-        } catch (error) {
-            console.error('Error al cargar tareas:', error);
-        }
-    }
 
-    // --- 6. Función para Dibujar Tarea ---
-    function mostrarTareaPublicada(data) {
-        let iconClass = 'fas fa-clipboard-list';
-        if (data.titulo.toLowerCase().includes('aviso')) { 
-            iconClass = 'fas fa-bullhorn'; 
-        }
 
-        let fecha = 'No especificada';
-        if (data.fecha_limite) { 
-            const fechaObj = new Date(data.fecha_limite + (data.hora_limite ? `T${data.hora_limite}` : ''));
-            fecha = fechaObj.toLocaleString('es-EC', { 
-                dateStyle: 'long', 
-                timeStyle: data.hora_limite ? 'short' : undefined
-            }); 
-        }
-        
-        const tareaEl = document.createElement('li');
-        tareaEl.className = 'activity-item';
-        
-        tareaEl.innerHTML = `
-            <div class="activity-icon"><i class="${iconClass}"></i></div>
-            <div class="activity-content">
-                <span class="activity-title">${data.titulo}</span>
-                <p class="activity-description">${data.descripcion || "Sin descripción."}</p>
-                <div class="activity-meta"><strong>Fecha Límite:</strong> ${fecha}</div>
-                <div class="activity-meta"><strong>Curso:</strong> ${data.nombre_curso || cursoNombreGlobal}</div>
-            </div>`;
-        
-        if (activityList) activityList.prepend(tareaEl);
-    }
+            // --- 4. Lógica de Publicar Tarea (CON HORA) ---
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (!inputTitulo || !inputTitulo.value.trim()) { alert("El título es obligatorio."); return; }
 
-    // --- 7. Lógica "Escribiendo..." ---
-    if (inputTitulo) {
-        inputTitulo.addEventListener('keyup', () => {
-            socket.emit('docente-escribiendo', { sala: cursoIdGlobal });
-        });
-    }
+                    const fecha = document.getElementById('input-fecha')?.value; // Usar ?. por si acaso
+                    const hora = document.getElementById('input-hora')?.value;
+                    const fileInput = document.getElementById('input-file');
 
-    // --- 8. LÓGICA DEL BOTÓN SALIR ---
-    const userAvatar = document.getElementById('user-avatar');
-    const userMenu = document.getElementById('user-menu');
-    const logoutBtn = document.getElementById('logout-btn');
+                    let fechaLimiteISO = null;
+                    if (fecha && hora) {
+                        fechaLimiteISO = new Date(`${fecha}T${hora}:00`).toISOString();
+                    }
 
-    if (userAvatar && userMenu && logoutBtn) {
-        userAvatar.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            userMenu.classList.toggle('show');
-        });
-        logoutBtn.addEventListener('click', () => {
-            window.location.href = 'login.html';
-        });
-    }
-    
-    window.addEventListener('click', (e) => {
-        if (userMenu && userMenu.classList.contains('show')) {
-            if (userAvatar && !userAvatar.contains(e.target)) {
-                userMenu.classList.remove('show');
+                    const material = fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null;
+
+                    const tareaData = {
+                        taskId: Date.now(),
+                        sala: cursoIdGlobal,
+                        cursoNombre: cursoNombreGlobal,
+                        titulo: inputTitulo.value,
+                        descripcion: document.getElementById('input-desc')?.value || '', // Añadir fallback
+                        fechaLimite: fechaLimiteISO,
+                        material: material
+                    };
+
+                    socket.emit('publicar-tarea', tareaData);
+                    mostrarTareaPublicada(tareaData);
+
+                    try {
+                        const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+                        tareasGuardadas.push(tareaData);
+                        localStorage.setItem('tareasDocente', JSON.stringify(tareasGuardadas));
+                    } catch (error) {
+                        console.error("Error al guardar en localStorage:", error);
+                    }
+
+                    if (statusDiv) statusDiv.textContent = `✅ Tarea publicada.`;
+                    setTimeout(cerrarModal, 2000);
+                });
+            } else {
+                console.error("Formulario no encontrado.");
             }
-        }
-    });
 
-});
+
+            // --- 5. Función para Dibujar Tarea (CON HORA) ---
+            function mostrarTareaPublicada(data) {
+                // (Esta función parece correcta, no se modifica)
+                let iconClass = 'fas fa-clipboard-list';
+                if (data.material) { iconClass = 'fas fa-paperclip'; }
+                if (data.titulo.toLowerCase().includes('aviso')) { iconClass = 'fas fa-bullhorn'; }
+
+                let fecha = 'No especificada';
+                if (data.fechaLimite) {
+                    fecha = new Date(data.fechaLimite).toLocaleString('es-EC', {
+                        dateStyle: 'long',
+                        timeStyle: 'short'
+                    });
+                }
+
+                const tareaEl = document.createElement('li');
+                tareaEl.className = 'activity-item';
+
+                let materialHtml = '';
+                if (data.material) {
+                    materialHtml = `<div class="activity-material-file">
+                                        <i class="fas fa-paperclip"></i> ${data.material}
+                                   </div>`;
+                }
+
+                tareaEl.innerHTML = `
+                    <div class="activity-icon"><i class="${iconClass}"></i></div>
+                    <div class="activity-content">
+                        <span class="activity-title">${data.titulo}</span>
+                        <p class="activity-description">${data.descripcion || "Sin descripción."}</p>
+                        ${materialHtml}
+                        <div class="activity-meta"><strong>Fecha Límite:</strong> ${fecha}</div>
+                    </div>`;
+
+                if (activityList) activityList.prepend(tareaEl);
+            }
+
+            // --- 6. Lógica "Escribiendo..." ---
+            if (inputTitulo) {
+                inputTitulo.addEventListener('keyup', () => {
+                    socket.emit('docente-escribiendo', { sala: cursoIdGlobal });
+                });
+            }
+
+            // --- 7. LÓGICA DEL BOTÓN SALIR ---
+            if (userAvatar && userMenu && logoutBtn) {
+                userAvatar.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('show');
+                });
+                logoutBtn.addEventListener('click', () => {
+                    window.location.href = 'login.html';
+                });
+            } else {
+                 console.error("Elementos del menú de usuario no encontrados.");
+            }
+
+            window.addEventListener('click', (e) => {
+                if (userMenu && userMenu.classList.contains('show')) {
+                    // Cierra si el clic NO fue DENTRO del menú desplegable Y NO fue en el avatar
+                    if (!userMenu.contains(e.target) && !userAvatar.contains(e.target)) {
+                         userMenu.classList.remove('show');
+                    }
+                }
+            });
+
+        }); // <-- FIN DEL DOMCONTENTLOADED
+    </script>
+</body>
+</html>
