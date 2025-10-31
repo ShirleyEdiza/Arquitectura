@@ -17,10 +17,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
         }
-        /* Estilo para la nueva barra de notificación/limpieza */
         .notification-bar {
             padding: 10px;
-            background-color: #ffe4e1; /* Rosa claro/rojo suave */
+            background-color: #ffe4e1;
             border: 1px solid #ffc9c9;
             color: #dc3545;
             border-radius: 5px;
@@ -39,7 +38,6 @@
         .btn-limpiar:hover {
             background-color: #c82333;
         }
-        /* [Otros estilos se mantienen igual] */
         .review-icon {
             font-size: 24px;
             color: #007bff;
@@ -96,67 +94,66 @@
         .btn-delete-task:hover {
             color: #a71d2a;
         }
-        /* --- ESTILOS PARA EL MENÚ DESPLEGABLE DE USUARIO --- */
-
-/* 1. Hacemos que el contenedor sea "relativo" para
-      que el menú se posicione dentro de él. */
-.user-section {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* 2. Hacemos que el avatar parezca un botón */
-#user-avatar-toggle {
-    cursor: pointer;
-    /* (Asumo que ya tienes los estilos de color/tamaño) */
-    width: 36px;
-    height: 36px;
-    background: #007bff;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
-
-/* 3. El menú (oculto por defecto) */
-#user-menu-dropdown {
-    display: none; /* Oculto por defecto */
-    position: absolute;
-    top: 50px; /* Se posiciona 50px debajo del header */
-    right: 0;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    z-index: 1000;
-    width: 150px;
-}
-
-/* 4. La regla MÁGICA: Cuando el JS añade la clase ".show", se muestra */
-#user-menu-dropdown.show {
-    display: block;
-}
-
-/* 5. Estilo del botón "Salir" */
-#user-menu-dropdown button {
-    background: none;
-    border: none;
-    color: #d9534f; /* Color rojo para "Salir" */
-    padding: 10px 20px;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-}
-
-#user-menu-dropdown button:hover {
-    background: #f9f9f9;
-}
+        .user-section {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #user-avatar-toggle {
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        #user-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 150px;
+        }
+        #user-menu-dropdown.show {
+            display: block;
+        }
+        #user-menu-dropdown button {
+            background: none;
+            border: none;
+            color: #d9534f;
+            padding: 10px 20px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        #user-menu-dropdown button:hover {
+            background: #f9f9f9;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #007bff;
+        }
+        .error-message {
+            background-color: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -167,14 +164,14 @@
             <span class="site-title">E-LEARNING</span>
         </div>
         <nav class="header-nav">
-            <a href="/area-personal" class="nav-item active" id="link-area">Área personal</a>
+            <a href="/area-personal-docente.html" class="nav-item active" id="link-area">Área personal</a>
             <a href="/docente.html" class="nav-item" id="link-cursos">Mis cursos</a>
         </nav>
         <div class="header-right">
         <div class="user-section">
-            <span class="user-name" id="user-name">Lesly Chamba Guayasamin</span>
+            <span class="user-name" id="user-name">Cargando...</span>
             
-            <div class="user-avatar" id="user-avatar-toggle">LC</div>
+            <div class="user-avatar" id="user-avatar-toggle">?</div>
             
             <div class="user-menu" id="user-menu-dropdown">
                 <button id="logout-btn">Salir</button>
@@ -189,13 +186,16 @@
         </div>
         
         <section class="topic-section">
-            <div id="cleanup-message">
-                </div>
+            <div id="cleanup-message"></div>
+            <div id="status-message"></div>
             
             <h3><i class="fas fa-check-double"></i> Tareas Pendientes por Revisar</h3>
             
             <ul id="review-list">
-                </ul>
+                <li class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+                </li>
+            </ul>
         </section>
     </main>
 
@@ -205,80 +205,30 @@
             <div class="footer-column"><h4>Mis Cursos (Bloques)</h4>
             <a href="/curso-docente.html?curso=clase-b&nombre=Redes%20y%20Conectividad" class="footer-link">Redes</a>
              <a href="/curso-docente.html?curso=clase-c&nombre=INTELIGENCIA%20ARTIFICIAL" class="footer-link">Inteligencia Artificial</a>
-           
         </div>
         <div class="footer-copyright"><p>© 2025 E-Learning. Todos los derechos reservados.</p></div>
         <a href="#" id="scroll-to-top" class="scroll-top-btn"><i class="fas fa-arrow-up"></i></a>
     </footer>
 
 <script>
-    // Define las tareas de prueba fuera del DOMContentLoaded para usarlas en la función de limpieza
-    const TAREAS_DE_PRUEBA = [
-        {
-            taskId: Date.now(), 
-            titulo: 'Práctica No. 1 - RACI',
-            cursoNombre: 'IA',
-            descripcion: 'Revisar matriz RACI y WBS del proyecto.',
-            sala: 'clase-a' 
-        },
-        {
-            taskId: Date.now() + 1, 
-            titulo: 'Examen Módulo 2',
-            cursoNombre: 'Redes y Conectividad',
-            descripcion: 'Pendiente de calificación a 15 estudiantes.',
-            sala: 'clase-b'
-        }
-    ];
-
     document.addEventListener('DOMContentLoaded', async () => {
         const reviewList = document.getElementById('review-list');
         const cleanupMessage = document.getElementById('cleanup-message');
-        
-        // ====================================================================
-        // === LÓGICA DE CARGA DESDE BACKEND NESTJS ===
-        // ====================================================================
-        
-        try {
-            // Obtener tareas del backend
-            const tareas = await window.apiService.obtenerTareas();
-            console.log('📥 Tareas cargadas del backend:', tareas);
-            
-            if (tareas && tareas.length > 0) {
-                // Limpiar lista
-                reviewList.innerHTML = '';
-                
-                // Mostrar tareas del backend
-                tareas.forEach(tarea => {
-                    mostrarTareaPorRevisar({
-                        taskId: tarea.id_tarea,
-                        titulo: tarea.titulo,
-                        cursoNombre: tarea.nombre_curso || 'Curso no especificado',
-                        descripcion: tarea.descripcion,
-                        sala: obtenerSalaDesdeCurso(tarea.nombre_curso),
-                        fechaLimite: tarea.fecha_limite && tarea.hora_limite 
-                            ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
-                            : null,
-                        material: tarea.archivo_material
-                    });
-                });
-                
-                // Ocultar mensaje de limpieza si hay datos reales
-                cleanupMessage.innerHTML = '';
-                
-            } else {
-                // No hay tareas en el backend, cargar desde localStorage
-                console.log('📝 No hay tareas en backend, cargando desde localStorage...');
-                cargarTareasLocales();
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando tareas del backend:', error);
-            // Fallback a datos locales si hay error
-            cargarTareasLocales();
-        }
+        const statusMessage = document.getElementById('status-message');
+        const userNameElement = document.getElementById('user-name');
+        const userAvatarElement = document.getElementById('user-avatar-toggle');
+
+        // Cargar información del usuario
+        cargarInformacionUsuario();
 
         // ====================================================================
-        // === LÓGICA DE BORRADO: Event Delegation ===
+        // === CARGA DE TAREAS DESDE BACKEND NESTJS ===
+        // ====================================================================
+        
+        await cargarTareasDelBackend();
+
+        // ====================================================================
+        // === LÓGICA DE BORRADO ===
         // ====================================================================
         reviewList.addEventListener('click', async (e) => {
             const deleteButton = e.target.closest('.btn-delete-task');
@@ -289,112 +239,106 @@
 
             e.preventDefault(); 
             
-            if (!confirm("¿Estás seguro de que quieres borrar esta tarea de la lista?")) {
+            if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
                 return;
             }
 
             const taskId = deleteButton.dataset.taskId;
             
             try {
-                // Intentar eliminar del backend primero
-                // NOTA: Necesitarías implementar un endpoint DELETE en tu backend
-                console.log('🗑️ Intentando eliminar tarea ID:', taskId);
+                // Intentar eliminar del backend
+                await eliminarTareaDelBackend(taskId);
                 
-                // Por ahora solo eliminamos del frontend
-                // await window.apiService.eliminarTarea(taskId);
+                // Eliminar del DOM
+                deleteButton.closest('li.review-item').remove();
+                
+                // Verificar si quedan tareas
+                if (reviewList.children.length === 0) {
+                    mostrarMensajeVacio();
+                }
+                
+                mostrarMensajeEstado('✅ Tarea eliminada correctamente', 'success');
                 
             } catch (error) {
-                console.error('Error eliminando tarea del backend:', error);
-            }
-
-            // Eliminar del localStorage como fallback
-            let currentTareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
-            currentTareas = currentTareas.filter(t => t.taskId.toString() !== taskId);
-            localStorage.setItem('tareasDocente', JSON.stringify(currentTareas));
-
-            deleteButton.closest('li.review-item').remove();
-            
-            if (reviewList.children.length === 0) {
-                mostrarMensajeVacio();
+                console.error('Error eliminando tarea:', error);
+                mostrarMensajeEstado('❌ Error al eliminar la tarea', 'error');
             }
         });
 
-        // Manejador del botón de limpieza
-        cleanupMessage.addEventListener('click', (e) => {
-            if (e.target.classList.contains('btn-limpiar')) {
-                limpiarTareasAntiguas();
-            }
-        });
-        
         // ====================================================================
-        // === FUNCIONES AUXILIARES ACTUALIZADAS ===
+        // === FUNCIONES PRINCIPALES ===
         // ====================================================================
         
-        // Función para cargar tareas locales (fallback)
-        function cargarTareasLocales() {
-            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
-            
-            if (tareasGuardadas.length === 0) {
-                localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA));
-                cargarTareasDesdeLocalStorage();
-            } else {
-                cargarTareasDesdeLocalStorage();
-                mostrarMensajeLimpieza();
+        async function cargarTareasDelBackend() {
+            try {
+                mostrarEstadoCarga('Cargando tareas...');
+                
+                // Obtener todas las tareas del backend
+                const tareas = await window.apiService.obtenerTareas();
+                console.log('📥 Tareas cargadas del backend:', tareas);
+                
+                if (tareas && tareas.length > 0) {
+                    mostrarTareas(tareas);
+                    ocultarMensajeLimpieza();
+                    mostrarMensajeEstado(`✅ Se cargaron ${tareas.length} tareas`, 'success');
+                } else {
+                    mostrarMensajeVacio();
+                    mostrarMensajeLimpieza();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando tareas del backend:', error);
+                mostrarMensajeEstado('❌ Error al cargar las tareas', 'error');
+                cargarTareasLocales();
             }
         }
-        
-        function cargarTareasDesdeLocalStorage() {
-            const tareas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+
+        function mostrarTareas(tareas) {
+            reviewList.innerHTML = '';
             
-            if (tareas.length === 0) {
-                mostrarMensajeVacio();
-                return;
-            }
-            
-            reviewList.innerHTML = ''; 
             tareas.forEach(tarea => {
-                mostrarTareaPorRevisar(tarea);
+                mostrarTareaPorRevisar({
+                    taskId: tarea.id_tarea,
+                    titulo: tarea.titulo,
+                    cursoNombre: tarea.nombre_curso || obtenerNombreCurso(tarea.id_curso),
+                    descripcion: tarea.descripcion,
+                    fechaLimite: tarea.fecha_limite && tarea.hora_limite 
+                        ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
+                        : null,
+                    material: tarea.archivo_material,
+                    fechaPublicacion: tarea.fecha_publicacion,
+                    entregas: tarea.entregas || 0 // Asumiendo que tienes este campo
+                });
             });
-        }
-        
-        function mostrarMensajeVacio() {
-            reviewList.innerHTML = '<li class="review-item" style="justify-content: center; color: #777;">No hay tareas publicadas que requieran revisión.</li>';
-        }
-
-        function mostrarMensajeLimpieza() {
-            cleanupMessage.innerHTML = `
-                <div class="notification-bar">
-                    <i class="fas fa-exclamation-triangle"></i> Usando datos locales.
-                    <button class="btn-limpiar">Cargar datos de ejemplo</button>
-                </div>
-            `;
-        }
-
-        function limpiarTareasAntiguas() {
-            localStorage.removeItem('tareasDocente'); 
-            localStorage.setItem('tareasDocente', JSON.stringify(TAREAS_DE_PRUEBA)); 
-            cleanupMessage.innerHTML = ''; 
-            cargarTareasDesdeLocalStorage(); 
         }
 
         function mostrarTareaPorRevisar(data) {
             let iconClass = 'fas fa-file-alt';
             if (data.material) iconClass = 'fas fa-paperclip';
-            if (data.sala === 'clase-c' || data.cursoNombre?.includes('IA')) iconClass = 'fas fa-database';
-            if (data.sala === 'clase-b' || data.cursoNombre?.includes('Redes')) iconClass = 'fas fa-network-wired';
-            if (data.sala === 'clase-a') iconClass = 'fas fa-code'; 
+            if (data.cursoNombre?.includes('IA') || data.cursoNombre?.includes('Inteligencia')) iconClass = 'fas fa-database';
+            if (data.cursoNombre?.includes('Redes')) iconClass = 'fas fa-network-wired';
 
             const item = document.createElement('li');
             item.className = 'review-item';
             
-            // Formatear fecha si existe
+            // Formatear fechas
             let fechaInfo = '';
             if (data.fechaLimite) {
                 try {
                     const fecha = new Date(data.fechaLimite);
-                    fechaInfo = `<br><small><strong>Límite:</strong> ${fecha.toLocaleDateString('es-EC')}</small>`;
+                    fechaInfo = `<br><small><strong>Límite:</strong> ${fecha.toLocaleDateString('es-EC')} ${fecha.toLocaleTimeString('es-EC', {hour: '2-digit', minute:'2-digit'})}</small>`;
                 } catch (e) {
                     console.warn('Error formateando fecha:', e);
+                }
+            }
+
+            let fechaPublicacionInfo = '';
+            if (data.fechaPublicacion) {
+                try {
+                    const fechaPub = new Date(data.fechaPublicacion);
+                    fechaPublicacionInfo = `<small><strong>Publicada:</strong> ${fechaPub.toLocaleDateString('es-EC')}</small>`;
+                } catch (e) {
+                    console.warn('Error formateando fecha de publicación:', e);
                 }
             }
             
@@ -406,14 +350,14 @@
                     <span class="review-title">${data.titulo}</span>
                     <span class="review-course">Curso: ${data.cursoNombre}</span>
                     <p class="review-description">${data.descripcion || 'Sin descripción.'}</p>
-                    ${data.material ? `<small><strong>Material:</strong> ${data.material}</small>` : ''}
+                    ${data.material ? `<small><strong>Material:</strong> ${data.material}</small><br>` : ''}
+                    ${fechaPublicacionInfo}
                     ${fechaInfo}
                 </div>
                 <div class="review-status">
-                    <span class="status-number">0</span>
+                    <span class="status-number">${data.entregas || 0}</span>
                     <span class="status-label">Entregas</span>
-                    <a href="#" class="btn-review">Revisar</a>
-                    
+                    <a href="#" class="btn-review" onclick="revisarTarea(${data.taskId})">Revisar</a>
                     <button class="btn-delete-task" data-task-id="${data.taskId}">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -421,18 +365,116 @@
             `;
             reviewList.appendChild(item);
         }
-        
-        // Función auxiliar para mapear nombre de curso a sala
-        function obtenerSalaDesdeCurso(nombreCurso) {
-            if (!nombreCurso) return 'clase-a';
-            if (nombreCurso.includes('Redes')) return 'clase-b';
-            if (nombreCurso.includes('IA') || nombreCurso.includes('Inteligencia')) return 'clase-c';
-            return 'clase-a';
+
+        async function eliminarTareaDelBackend(taskId) {
+            // NOTA: Necesitarías implementar un endpoint DELETE en tu backend NestJS
+            // Por ahora simulamos la eliminación
+            console.log('🗑️ Eliminando tarea ID:', taskId);
+            
+            // Simular llamada API (reemplaza con tu endpoint real)
+            // await window.apiService.eliminarTarea(taskId);
+            
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(), 500);
+            });
         }
 
-        // ===================================================
+        function cargarInformacionUsuario() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                
+                if (usuario.nombre) {
+                    userNameElement.textContent = usuario.nombre;
+                    
+                    // Generar iniciales para el avatar
+                    const iniciales = usuario.nombre
+                        .split(' ')
+                        .map(p => p[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                    
+                    userAvatarElement.textContent = iniciales;
+                } else {
+                    userNameElement.textContent = 'Docente';
+                    userAvatarElement.textContent = 'D';
+                }
+            } catch (error) {
+                console.error('Error cargando información del usuario:', error);
+                userNameElement.textContent = 'Docente';
+                userAvatarElement.textContent = 'D';
+            }
+        }
+
+        function obtenerNombreCurso(idCurso) {
+            const cursos = {
+                1: 'Inteligencia Artificial',
+                2: 'Redes y Conectividad'
+            };
+            return cursos[idCurso] || `Curso ${idCurso}`;
+        }
+
+        // ====================================================================
+        // === FUNCIONES DE UI ===
+        // ====================================================================
+        
+        function mostrarEstadoCarga(mensaje) {
+            reviewList.innerHTML = `
+                <li class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> ${mensaje}
+                </li>
+            `;
+        }
+
+        function mostrarMensajeVacio() {
+            reviewList.innerHTML = `
+                <li class="review-item" style="justify-content: center; color: #777;">
+                    <i class="fas fa-inbox"></i> No hay tareas pendientes de revisión.
+                </li>
+            `;
+        }
+
+        function mostrarMensajeLimpieza() {
+            cleanupMessage.innerHTML = `
+                <div class="notification-bar">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    No se pudieron cargar las tareas del servidor.
+                    <button class="btn-limpiar" onclick="recargarTareas()">Reintentar</button>
+                </div>
+            `;
+        }
+
+        function ocultarMensajeLimpieza() {
+            cleanupMessage.innerHTML = '';
+        }
+
+        function mostrarMensajeEstado(mensaje, tipo) {
+            statusMessage.innerHTML = `
+                <div class="${tipo === 'success' ? 'notification-bar' : 'error-message'}" style="background-color: ${tipo === 'success' ? '#e6f7e6' : '#ffe6e6'}; color: ${tipo === 'success' ? '#27ae60' : '#d63031'};">
+                    ${mensaje}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                statusMessage.innerHTML = '';
+            }, 3000);
+        }
+
+        function cargarTareasLocales() {
+            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+            
+            if (tareasGuardadas.length > 0) {
+                mostrarTareas(tareasGuardadas);
+                mostrarMensajeEstado('⚠️ Usando datos locales almacenados', 'warning');
+            } else {
+                mostrarMensajeVacio();
+                mostrarMensajeLimpieza();
+            }
+        }
+
+        // ====================================================================
         // === LÓGICA DEL MENÚ DESPLEGABLE ===
-        // ===================================================
+        // ====================================================================
         
         const avatarToggle = document.getElementById('user-avatar-toggle');
         const userMenu = document.getElementById('user-menu-dropdown');
@@ -445,7 +487,7 @@
             });
 
             logoutBtn.addEventListener('click', () => {
-                console.log("Redirigiendo a login.html...");
+                localStorage.removeItem('usuario');
                 window.location.href = 'login.html';
             });
         }
@@ -459,6 +501,16 @@
         });
 
     });
+
+    // Funciones globales para los botones
+    function revisarTarea(taskId) {
+        alert(`Función de revisión para tarea ID: ${taskId}`);
+        // Aquí puedes redirigir a la página de revisión o abrir un modal
+    }
+
+    async function recargarTareas() {
+        await cargarTareasDelBackend();
+    }
 </script>
 </body>
 </html>
