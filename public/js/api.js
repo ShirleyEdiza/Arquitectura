@@ -8,7 +8,7 @@ class ApiService {
     async request(endpoint, options = {}) {
         try {
             const url = `${this.BASE_URL}${endpoint}`;
-            console.log('🌐 Haciendo request a:', url);
+            console.log('🌐 Haciendo request a:', url, 'Options:', options);
             
             const response = await fetch(url, {
                 headers: {
@@ -19,33 +19,39 @@ class ApiService {
             });
 
             console.log('📨 Response status:', response.status);
+            console.log('📨 Response ok:', response.ok);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Error response:', errorText);
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            // Obtener el texto de la respuesta primero
+            const responseText = await response.text();
+            console.log('📨 Response text:', responseText);
+
+            let data;
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+                console.warn('⚠️ Response no es JSON válido, usando texto:', responseText);
+                data = { message: responseText };
             }
 
-            const data = await response.json();
-            console.log('✅ Response data:', data);
+            // Si la respuesta no es exitosa, lanzar error con la data parseada
+            if (!response.ok) {
+                console.error('❌ Error response:', data);
+                
+                // Si el backend retornó un objeto de error, usarlo
+                if (data.error || data.message) {
+                    throw new Error(data.error || data.message);
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            }
+
+            console.log('✅ Response data (parsed):', data);
             return data;
 
         } catch (error) {
             console.error('❌ Error en la petición API:', error);
             throw error;
         }
-    }
-
-    // ========== AUTH ==========
-    async login(credenciales) {
-        console.log('🔐 Intentando login con:', credenciales);
-        return await this.request('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({
-                correo: credenciales.email,
-                contrasena: credenciales.password
-            })
-        });
     }
 
     // ========== TAREAS (PUBLISHER) ==========
@@ -71,51 +77,35 @@ class ApiService {
         });
     }
 
-    // ========== NOTIFICACIONES ==========
-    async obtenerNotificaciones(idEstudiante) {
-        return await this.request(`/notifications?estudianteId=${idEstudiante}`);
+    async obtenerTarea(idTarea) {
+        return await this.request(`/publisher/tarea/${idTarea}`);
     }
 
-    async obtenerNotificacionesNoLeidas(idEstudiante) {
-        return await this.request(`/notifications/no-leidas?estudianteId=${idEstudiante}`);
-    }
-
-    async marcarNotificacionComoLeida(idNotificacion) {
-        return await this.request(`/notifications/${idNotificacion}/leer`, {
-            method: 'PATCH'
+    async actualizarTarea(idTarea, tareaData) {
+        console.log('🔄 Actualizando tarea ID:', idTarea, 'Datos:', tareaData);
+        return await this.request(`/publisher/tarea/${idTarea}`, {
+            method: 'PUT',
+            body: JSON.stringify(tareaData)
         });
     }
 
-    // ========== PUBLICAR NOTIFICACIONES ==========
-    async enviarNotificacion(notificacionData) {
-        return await this.request('/publisher/notificacion', {
-            method: 'POST',
-            body: JSON.stringify(notificacionData)
-        });
+    // ✅ SOLO el método para llamar a la API - sin lógica de UI
+    async eliminarTarea(idTarea) {
+        console.log('🗑️ ApiService: Eliminando tarea ID:', idTarea);
+        
+        try {
+            const response = await this.request(`/publisher/tarea/${idTarea}`, {
+                method: 'DELETE'
+            });
+            
+            console.log('✅ ApiService: Respuesta de eliminación:', response);
+            return response;
+            
+        } catch (error) {
+            console.error('❌ ApiService: Error eliminando tarea:', error);
+            throw error;
+        }
     }
- // En api.js - método corregido
-async obtenerCursosDelEstudiante(estudianteId) {
-  try {
-    console.log(`🎓 Solicitando cursos para estudiante: ${estudianteId}`);
-    const response = await fetch(`${this.BASE_URL}/publisher/estudiante/cursos?estudianteId=${estudianteId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const cursos = await response.json();
-    console.log(`✅ Cursos recibidos para estudiante ${estudianteId}:`, cursos);
-    return cursos;
-  } catch (error) {
-    console.error('❌ Error obteniendo cursos del estudiante:', error);
-    throw error;
-  }
-}
 }
 
 // Crear instancia global

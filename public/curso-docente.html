@@ -173,6 +173,40 @@
             background-color: #f7e6e6;
             border-radius: 4px;
         }
+
+        /* Estilos para los botones de acción */
+        .activity-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-editar, .btn-eliminar {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+
+        .btn-editar {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-editar:hover {
+            background: #0056b3;
+        }
+
+        .btn-eliminar {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-eliminar:hover {
+            background: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -265,8 +299,10 @@
     </footer>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
 
-    <script>
+        <script>
         // Mover TODO dentro del DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -285,17 +321,15 @@
             const modal = document.getElementById('modal-publicar');
             const modalTitulo = document.getElementById('modal-titulo');
             const btnCerrar = document.querySelector('.modal-close');
-            const btnAbrirModal = document.getElementById('btn-abrir-modal'); // MOVIDO AQUÍ
+            const btnAbrirModal = document.getElementById('btn-abrir-modal');
             const form = document.getElementById('form-tarea');
-            // const selectCurso = document.getElementById('select-curso'); // Este ID no existe en el HTML, lo quitamos para evitar errores
             const inputTitulo = document.getElementById('input-titulo');
             const statusDiv = document.getElementById('status');
             const tituloCursoH1 = document.getElementById('titulo-curso');
             const activityList = document.getElementById('activity-list');
-            const userAvatar = document.getElementById('user-avatar'); // MOVIDO AQUÍ
-            const userMenu = document.getElementById('user-menu');     // MOVIDO AQUÍ
-            const logoutBtn = document.getElementById('logout-btn');   // MOVIDO AQUÍ
-
+            const userAvatar = document.getElementById('user-avatar');
+            const userMenu = document.getElementById('user-menu');
+            const logoutBtn = document.getElementById('logout-btn');
 
             let cursoIdGlobal = '';
             let cursoNombreGlobal = '';
@@ -308,37 +342,35 @@
             if (!cursoId || !cursoNombre) {
                 if (tituloCursoH1) tituloCursoH1.textContent = "Error: Curso no encontrado";
                 if (btnAbrirModal) btnAbrirModal.disabled = true;
-                // No retornar aquí para que el menú Salir funcione aunque no haya curso
             } else {
                 cursoIdGlobal = cursoId;
                 cursoNombreGlobal = cursoNombre;
                 if (tituloCursoH1) tituloCursoH1.textContent = `Gestionar: ${cursoNombre}`;
                 if (modalTitulo) modalTitulo.textContent = `Publicar en: ${cursoNombre}`;
-                
-                // Esta lógica era para un select que ya no existe, la quitamos.
-                // if (selectCurso) {
-                //     selectCurso.innerHTML = `<option value="${cursoId}">${cursoNombre}</option>`;
-                //     selectCurso.value = cursoId;
-                // }
             }
 
-
             // --- 3. Lógica Modal ---
-            // Asegurarse de que los elementos existan antes de añadir listeners
             if (btnAbrirModal && modal) {
                 btnAbrirModal.addEventListener('click', () => {
-                    console.log("Botón 'Agregar Tarea' clickeado!"); // Log para depurar
+                    console.log("Botón 'Agregar Tarea' clickeado!");
                     modal.style.display = 'flex';
+                    // Restaurar modo creación
+                    restaurarModoCreacion();
                 });
             } else {
                 console.error("No se encontró el botón para abrir el modal o el modal mismo.");
             }
 
             const cerrarModal = () => {
-                if (modal) modal.style.display = 'none';
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.removeAttribute('data-editing-task-id');
+                }
                 if (form) form.reset();
-                if (statusDiv) statusDiv.textContent = ''; // Limpiar estado
+                if (statusDiv) statusDiv.textContent = '';
+                restaurarModoCreacion();
             }
+
             if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
             if (modal) {
                 modal.addEventListener('click', (e) => {
@@ -348,13 +380,28 @@
                 });
             }
 
+            // --- FUNCIÓN PARA RESTAURAR MODO CREACIÓN ---
+            function restaurarModoCreacion() {
+                if (modalTitulo) modalTitulo.textContent = `Publicar en: ${cursoNombreGlobal}`;
+                const btnPublicar = document.getElementById('btn-publicar');
+                if (btnPublicar) {
+                    btnPublicar.textContent = 'Publicar Ahora';
+                    btnPublicar.style.backgroundColor = '#007bff';
+                }
+            }
 
-            // --- 4. Lógica de Publicar Tarea (CON HORA) ---
-                       // --- 4. Lógica de Publicar Tarea (CONEXIÓN AL BACKEND NESTJS) ---
+            // --- VARIABLE PARA CONTROLAR EL MODO ---
+            let isEditingMode = false;
+            let currentEditingTaskId = null;
+
+            // --- 4. Lógica ÚNICA del Formulario ---
             if (form) {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     
+                    console.log('🚨 FORMULARIO ENVIADO - Modo:', isEditingMode ? 'EDICIÓN' : 'CREACIÓN');
+                    console.log('🚨 ID de tarea en edición:', currentEditingTaskId);
+
                     // Validaciones básicas
                     if (!inputTitulo || !inputTitulo.value.trim()) { 
                         alert("El título es obligatorio."); 
@@ -366,171 +413,170 @@
                     const fileInput = document.getElementById('input-file');
 
                     try {
-                        // Mapear cursoIdGlobal a ID numérico (ajusta según tu base de datos)
-                        const cursoIdMap = {
-                            'clase-b': 1,  // Redes
-                            'clase-c': 2   // Inteligencia Artificial
-                        };
-                        
-                        const idCursoNumerico = cursoIdMap[cursoIdGlobal] || 1;
+                        if (isEditingMode && currentEditingTaskId) {
+                            // MODO EDICIÓN - ACTUALIZAR TAREA EXISTENTE
+                            console.log('🔄 Actualizando tarea existente ID:', currentEditingTaskId);
+                            
+                            const tareaDataActualizada = {
+                                titulo: inputTitulo.value,
+                                descripcion: document.getElementById('input-desc')?.value || '',
+                                fecha_limite: fecha || new Date().toISOString().split('T')[0],
+                                hora_limite: hora || '23:59:00',
+                                archivo_material: fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null
+                            };
 
-                        // Preparar datos para el backend
-                        const tareaData = {
-                            titulo: inputTitulo.value,
-                            descripcion: document.getElementById('input-desc')?.value || '',
-                            fecha_limite: fecha || new Date().toISOString().split('T')[0], // Fecha actual si no se especifica
-                            hora_limite: hora || '23:59:00',
-                            archivo_material: fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null,
-                            id_curso: idCursoNumerico
-                        };
+                            console.log('📤 Actualizando tarea en backend:', currentEditingTaskId, tareaDataActualizada);
 
-                        console.log('📤 Enviando tarea al backend:', tareaData);
+                            const respuesta = await window.apiService.actualizarTarea(currentEditingTaskId, tareaDataActualizada);
+                            
+                            console.log('✅ Tarea actualizada:', respuesta);
 
-                        // 🔥 PUBLICAR TAREA USANDO EL SERVICIO API (PUBLISHER)
-                        const respuesta = await window.apiService.crearTarea(tareaData);
-                        
-                        console.log('✅ Respuesta del backend:', respuesta);
+                            if (statusDiv) {
+                                statusDiv.textContent = '✅ Tarea actualizada correctamente';
+                                statusDiv.style.color = 'green';
+                            }
 
-                        // Mostrar la tarea en la lista localmente
-                        mostrarTareaPublicada({
-                            taskId: respuesta.tareaId || Date.now(),
-                            sala: cursoIdGlobal,
-                            cursoNombre: cursoNombreGlobal,
-                            titulo: tareaData.titulo,
-                            descripcion: tareaData.descripcion,
-                            fechaLimite: fecha && hora ? `${fecha}T${hora}:00` : null,
-                            material: tareaData.archivo_material
-                        });
+                            // Cerrar modal y recargar
+                            setTimeout(() => {
+                                cerrarModal();
+                                cargarTareasDelBackend();
+                                // Restaurar modo creación
+                                isEditingMode = false;
+                                currentEditingTaskId = null;
+                            }, 2000);
 
-                        // Guardar también en localStorage como respaldo
-                        try {
-                            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
-                            tareasGuardadas.push({
-                                taskId: respuesta.tareaId || Date.now(),
-                                sala: cursoIdGlobal,
-                                cursoNombre: cursoNombreGlobal,
-                                titulo: tareaData.titulo,
-                                descripcion: tareaData.descripcion,
-                                fechaLimite: fecha && hora ? `${fecha}T${hora}:00` : null,
-                                material: tareaData.archivo_material
-                            });
-                            localStorage.setItem('tareasDocente', JSON.stringify(tareasGuardadas));
-                        } catch (storageError) {
-                            console.warn("Error al guardar en localStorage:", storageError);
+                        } else {
+                            // MODO CREACIÓN - CREAR NUEVA TAREA
+                            console.log('✅ Creando nueva tarea');
+                            
+                            const cursoIdMap = {
+                                'clase-b': 1,
+                                'clase-c': 2
+                            };
+                            
+                            const idCursoNumerico = cursoIdMap[cursoIdGlobal] || 1;
+
+                            const tareaData = {
+                                titulo: inputTitulo.value,
+                                descripcion: document.getElementById('input-desc')?.value || '',
+                                fecha_limite: fecha || new Date().toISOString().split('T')[0],
+                                hora_limite: hora || '23:59:00',
+                                archivo_material: fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null,
+                                id_curso: idCursoNumerico
+                            };
+
+                            console.log('📤 Creando nueva tarea:', tareaData);
+
+                            const respuesta = await window.apiService.crearTarea(tareaData);
+                            
+                            console.log('✅ Respuesta del backend:', respuesta);
+
+                            if (statusDiv) {
+                                statusDiv.textContent = `✅ Tarea publicada correctamente. ID: ${respuesta.tareaId}`;
+                                statusDiv.style.color = 'green';
+                            }
+
+                            // Cerrar modal después de 2 segundos
+                            setTimeout(() => {
+                                cerrarModal();
+                                cargarTareasDelBackend();
+                            }, 2000);
                         }
-
-                        // Mostrar mensaje de éxito
-                        if (statusDiv) {
-                            statusDiv.textContent = `✅ Tarea publicada correctamente. ID: ${respuesta.tareaId}`;
-                            statusDiv.style.color = 'green';
-                        }
-
-                        // Cerrar modal después de 2 segundos
-                        setTimeout(() => {
-                            cerrarModal();
-                            // Recargar la lista de tareas desde el backend
-                            cargarTareasDelBackend();
-                        }, 2000);
 
                     } catch (error) {
-                        console.error('❌ Error al publicar tarea:', error);
+                        console.error('❌ Error:', error);
                         
-                        // Mostrar mensaje de error
                         if (statusDiv) {
-                            statusDiv.textContent = `❌ Error al publicar tarea: ${error.message}`;
+                            statusDiv.textContent = `❌ Error: ${error.message}`;
                             statusDiv.style.color = 'red';
                         }
                         
-                        // Fallback: publicar localmente si el backend falla
-                        console.log('🔄 Usando fallback local...');
-                        const tareaDataFallback = {
-                            taskId: Date.now(),
-                            sala: cursoIdGlobal,
-                            cursoNombre: cursoNombreGlobal,
-                            titulo: inputTitulo.value,
-                            descripcion: document.getElementById('input-desc')?.value || '',
-                            fechaLimite: fecha && hora ? `${fecha}T${hora}:00` : null,
-                            material: fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null
-                        };
-
-                        socket.emit('publicar-tarea', tareaDataFallback);
-                        mostrarTareaPublicada(tareaDataFallback);
-
-                        try {
-                            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
-                            tareasGuardadas.push(tareaDataFallback);
-                            localStorage.setItem('tareasDocente', JSON.stringify(tareasGuardadas));
-                        } catch (storageError) {
-                            console.error("Error al guardar en localStorage:", storageError);
-                        }
-
-                        if (statusDiv) {
-                            statusDiv.textContent = `⚠️ Tarea publicada localmente (fallback).`;
-                            statusDiv.style.color = 'orange';
-                        }
-                        setTimeout(cerrarModal, 2000);
-                    }
-                });
-            } else {
-                console.error("Formulario no encontrado.");
-            }
-
-            // --- FUNCIÓN PARA CARGAR TAREAS DEL BACKEND ---
-            async function cargarTareasDelBackend() {
-                try {
-                    // Obtener el ID numérico del curso
-                    const cursoIdMap = {
-                        'clase-b': 1,
-                        'clase-c': 2
-                    };
-                    const idCursoNumerico = cursoIdMap[cursoIdGlobal];
-                    
-                    if (!idCursoNumerico) {
-                        console.warn('No se pudo mapear el curso a un ID numérico');
-                        return;
-                    }
-
-                    // Consultar tareas del backend
-                    const tareas = await window.apiService.consultarTareas({
-                        id_curso: idCursoNumerico
-                    });
-
-                    console.log('📥 Tareas cargadas del backend:', tareas);
-
-                    // Limpiar lista actual
-                    if (activityList) {
-                        activityList.innerHTML = '';
-                    }
-
-                    // Mostrar tareas en la lista
-                    if (tareas && Array.isArray(tareas) && tareas.length > 0) {
-                        tareas.forEach(tarea => {
-                            mostrarTareaPublicada({
-                                taskId: tarea.id_tarea,
+                        // Fallback local solo para creación
+                        if (!isEditingMode) {
+                            console.log('🔄 Usando fallback local...');
+                            const tareaDataFallback = {
+                                taskId: Date.now(),
                                 sala: cursoIdGlobal,
                                 cursoNombre: cursoNombreGlobal,
-                                titulo: tarea.titulo,
-                                descripcion: tarea.descripcion,
-                                fechaLimite: tarea.fecha_limite && tarea.hora_limite 
-                                    ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
-                                    : null,
-                                material: tarea.archivo_material
-                            });
-                        });
-                    } else {
-                        // Mostrar mensaje si no hay tareas
-                        if (activityList) {
-                            activityList.innerHTML = '<li class="activity-item" style="text-align: center; color: #777;">No hay tareas publicadas para este curso.</li>';
+                                titulo: inputTitulo.value,
+                                descripcion: document.getElementById('input-desc')?.value || '',
+                                fechaLimite: fecha && hora ? `${fecha}T${hora}:00` : null,
+                                material: fileInput && fileInput.files.length > 0 ? fileInput.files[0].name : null
+                            };
+
+                            mostrarTareaPublicada(tareaDataFallback);
+
+                            try {
+                                const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+                                tareasGuardadas.push(tareaDataFallback);
+                                localStorage.setItem('tareasDocente', JSON.stringify(tareasGuardadas));
+                            } catch (storageError) {
+                                console.error("Error al guardar en localStorage:", storageError);
+                            }
+
+                            if (statusDiv) {
+                                statusDiv.textContent = `⚠️ Tarea publicada localmente (fallback).`;
+                                statusDiv.style.color = 'orange';
+                            }
+                            setTimeout(cerrarModal, 2000);
                         }
                     }
-
-                } catch (error) {
-                    console.error('❌ Error cargando tareas del backend:', error);
-                    // Cargar tareas desde localStorage como fallback
-                    cargarTareasLocales();
-                }
+                });
             }
 
+async function cargarTareasDelBackend() {
+    try {
+        const cursoIdMap = {
+            'clase-b': 1,
+            'clase-c': 2
+        };
+        const idCursoNumerico = cursoIdMap[cursoIdGlobal];
+        
+        if (!idCursoNumerico) {
+            console.warn('No se pudo mapear el curso a un ID numérico');
+            return;
+        }
+
+        console.log('🔄 Cargando tareas para curso ID:', idCursoNumerico);
+        
+        const tareas = await window.apiService.consultarTareas({
+            id_curso: idCursoNumerico
+        });
+
+        console.log('📥 Tareas recibidas del backend:', tareas);
+        console.log('📊 Número de tareas activas:', tareas ? tareas.length : 0);
+
+        if (activityList) {
+            activityList.innerHTML = '';
+        }
+
+        if (tareas && Array.isArray(tareas) && tareas.length > 0) {
+            tareas.forEach(tarea => {
+                console.log('📝 Mostrando tarea:', tarea.id_tarea, tarea.titulo);
+                mostrarTareaPublicada({
+                    taskId: tarea.id_tarea,
+                    sala: cursoIdGlobal,
+                    cursoNombre: cursoNombreGlobal,
+                    titulo: tarea.titulo,
+                    descripcion: tarea.descripcion,
+                    fechaLimite: tarea.fecha_limite && tarea.hora_limite 
+                        ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
+                        : null,
+                    material: tarea.archivo_material
+                });
+            });
+        } else {
+            console.log('ℹ️ No hay tareas activas para mostrar');
+            if (activityList) {
+                activityList.innerHTML = '<li class="activity-item" style="text-align: center; color: #777;">No hay tareas publicadas para este curso.</li>';
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ Error cargando tareas del backend:', error);
+        cargarTareasLocales();
+    }
+}
             // --- FUNCIÓN PARA CARGAR TAREAS LOCALES (FALLBACK) ---
             function cargarTareasLocales() {
                 const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
@@ -551,13 +597,7 @@
                 }
             }
 
-            // --- CARGAR TAREAS AL INICIAR LA PÁGINA ---
-            // Al final del DOMContentLoaded, añade:
-            setTimeout(() => {
-                cargarTareasDelBackend();
-            }, 500);
-            // --- 5. Función para Dibujar Tarea (CON HORA) ---
-                      // --- 5. Función para Dibujar Tarea (ACTUALIZADA) ---
+            // --- 5. Función para Dibujar Tarea (CON BOTONES EDITAR/ELIMINAR) ---
             function mostrarTareaPublicada(data) {
                 let iconClass = 'fas fa-clipboard-list';
                 if (data.material) { 
@@ -582,6 +622,7 @@
 
                 const tareaEl = document.createElement('li');
                 tareaEl.className = 'activity-item';
+                tareaEl.setAttribute('data-task-id', data.taskId);
 
                 let materialHtml = '';
                 if (data.material) {
@@ -600,19 +641,175 @@
                             <strong>Fecha Límite:</strong> ${fecha}
                             ${data.taskId ? `<br><small><strong>ID:</strong> ${data.taskId}</small>` : ''}
                         </div>
+                        <div class="activity-actions">
+                            <button class="btn-editar" data-task-id="${data.taskId}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn-eliminar" data-task-id="${data.taskId}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
                     </div>`;
 
                 if (activityList) {
-                    // Verificar si la tarea ya existe para evitar duplicados
                     const tareaExistente = Array.from(activityList.children).find(item => 
-                        item.querySelector('.activity-title').textContent === data.titulo
+                        item.getAttribute('data-task-id') == data.taskId
                     );
                     
                     if (!tareaExistente) {
                         activityList.prepend(tareaEl);
+                    } else {
+                        tareaExistente.replaceWith(tareaEl);
                     }
                 }
+
+                agregarEventListenersTarea(tareaEl, data);
             }
+
+            // --- FUNCIÓN PARA AGREGAR EVENT LISTENERS A LOS BOTONES DE TAREA ---
+            function agregarEventListenersTarea(tareaEl, data) {
+                const btnEditar = tareaEl.querySelector('.btn-editar');
+                const btnEliminar = tareaEl.querySelector('.btn-eliminar');
+
+                if (btnEditar) {
+                    btnEditar.addEventListener('click', () => {
+                        editarTarea(data);
+                    });
+                }
+
+                if (btnEliminar) {
+                    btnEliminar.addEventListener('click', () => {
+                        eliminarTarea(data.taskId, tareaEl);
+                    });
+                }
+            }
+
+            // --- FUNCIÓN PARA EDITAR TAREA ---
+            async function editarTarea(tareaData) {
+                try {
+                    console.log('✏️ Editando tarea:', tareaData);
+
+                    // Llenar el formulario con los datos actuales
+                    if (inputTitulo) inputTitulo.value = tareaData.titulo || '';
+                    
+                    const descTextarea = document.getElementById('input-desc');
+                    if (descTextarea) descTextarea.value = tareaData.descripcion || '';
+
+                    // Procesar fecha y hora
+                    if (tareaData.fechaLimite) {
+                        const fechaObj = new Date(tareaData.fechaLimite);
+                        const fechaInput = document.getElementById('input-fecha');
+                        const horaInput = document.getElementById('input-hora');
+                        
+                        if (fechaInput) {
+                            fechaInput.value = fechaObj.toISOString().split('T')[0];
+                        }
+                        if (horaInput) {
+                            horaInput.value = fechaObj.toTimeString().slice(0, 5);
+                        }
+                    }
+
+                    // Actualizar el modal para modo edición
+                    if (modalTitulo) modalTitulo.textContent = `Editar Tarea: ${cursoNombreGlobal}`;
+                    
+                    // Cambiar el texto del botón
+                    const btnPublicar = document.getElementById('btn-publicar');
+                    if (btnPublicar) {
+                        btnPublicar.textContent = 'Actualizar Tarea';
+                        btnPublicar.style.backgroundColor = '#28a745';
+                    }
+
+                    // Abrir modal
+                    if (modal) modal.style.display = 'flex';
+
+                    // Configurar modo edición
+                    isEditingMode = true;
+                    currentEditingTaskId = tareaData.taskId;
+
+                } catch (error) {
+                    console.error('❌ Error preparando edición:', error);
+                    alert('Error al preparar la edición de la tarea');
+                }
+            }
+
+           // --- FUNCIÓN CORREGIDA PARA ELIMINAR TAREA ---
+async function eliminarTarea(taskId, tareaElement) {
+    try {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta tarea?\nEsta acción no se puede deshacer.')) {
+            return;
+        }
+
+        console.log('🗑️ Iniciando eliminación de tarea ID:', taskId);
+
+        // Mostrar estado de eliminación
+        if (tareaElement) {
+            tareaElement.classList.add('eliminando');
+            const btnEliminar = tareaElement.querySelector('.btn-eliminar');
+            if (btnEliminar) {
+                btnEliminar.disabled = true;
+                btnEliminar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+            }
+        }
+
+        // Llamar al servicio API para eliminar
+        const respuesta = await window.apiService.eliminarTarea(taskId);
+        
+        console.log('✅ Respuesta del backend al eliminar:', respuesta);
+
+        // Verificar si la eliminación fue exitosa
+        if (respuesta && (respuesta.success === true || respuesta.eliminado === true)) {
+            
+            // ✅ ELIMINACIÓN EXITOSA - Remover del DOM inmediatamente
+            if (tareaElement) {
+                // Animación de desvanecimiento
+                tareaElement.style.transition = 'all 0.3s ease';
+                tareaElement.style.opacity = '0';
+                tareaElement.style.maxHeight = '0';
+                tareaElement.style.margin = '0';
+                tareaElement.style.padding = '0';
+                tareaElement.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    if (tareaElement.parentNode) {
+                        tareaElement.parentNode.removeChild(tareaElement);
+                    }
+                    
+                    // Verificar si la lista quedó vacía
+                    if (activityList && activityList.children.length === 0) {
+                        activityList.innerHTML = '<li class="activity-item" style="text-align: center; color: #777;">No hay tareas publicadas para este curso.</li>';
+                    }
+                }, 300);
+            }
+
+            // Mostrar mensaje de éxito
+            mostrarNotificacion('✅ Tarea eliminada correctamente', 'success');
+
+        } else {
+            throw new Error(respuesta?.message || 'Error al eliminar la tarea');
+        }
+
+    } catch (error) {
+        console.error('❌ Error eliminando tarea:', error);
+        
+        // ❌ ERROR - Restaurar el elemento
+        if (tareaElement) {
+            tareaElement.classList.remove('eliminando');
+            const btnEliminar = tareaElement.querySelector('.btn-eliminar');
+            if (btnEliminar) {
+                btnEliminar.disabled = false;
+                btnEliminar.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
+            }
+        }
+        
+        mostrarNotificacion(`❌ ${error.message}`, 'error');
+    }
+}
+
+            // --- CARGAR TAREAS AL INICIAR LA PÁGINA ---
+            setTimeout(() => {
+                cargarTareasDelBackend();
+            }, 500);
+
             // --- 6. Lógica "Escribiendo..." ---
             if (inputTitulo) {
                 inputTitulo.addEventListener('keyup', () => {
@@ -635,17 +832,67 @@
 
             window.addEventListener('click', (e) => {
                 if (userMenu && userMenu.classList.contains('show')) {
-                    // Cierra si el clic NO fue DENTRO del menú desplegable Y NO fue en el avatar
                     if (!userMenu.contains(e.target) && !userAvatar.contains(e.target)) {
                          userMenu.classList.remove('show');
                     }
                 }
             });
+// --- FUNCIÓN PARA MOSTRAR NOTIFICACIONES ---
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Eliminar notificaciones anteriores
+    const notificacionesAnteriores = document.querySelectorAll('.notificacion-temporal');
+    notificacionesAnteriores.forEach(notif => notif.remove());
+
+    const notificacion = document.createElement('div');
+    notificacion.className = 'notificacion-temporal';
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateX(100px);
+    `;
+
+    // Colores según el tipo
+    const colores = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+
+    notificacion.style.backgroundColor = colores[tipo] || colores.info;
+    notificacion.textContent = mensaje;
+
+    document.body.appendChild(notificacion);
+
+    // Animación de entrada
+    setTimeout(() => {
+        notificacion.style.opacity = '1';
+        notificacion.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Auto-eliminar después de 5 segundos
+    setTimeout(() => {
+        notificacion.style.opacity = '0';
+        notificacion.style.transform = 'translateX(100px)';
+        setTimeout(() => {
+            if (notificacion.parentNode) {
+                notificacion.parentNode.removeChild(notificacion);
+            }
+        }, 300);
+    }, 5000);
+}
 
         }); // <-- FIN DEL DOMCONTENTLOADED
     </script>
 </body>
 </html>
-<!-- En el head -->
-<script src="js/config.js"></script>
-<script src="js/api.js"></script>
