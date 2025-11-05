@@ -88,6 +88,12 @@ class ApiService {
             body: JSON.stringify(tareaData)
         });
     }
+    // ========== CURSOS (ESTUDIANTE) ==========
+async obtenerCursosDelEstudiante(estudianteId) {
+  console.log('🎓 Obteniendo cursos del estudiante con ID:', estudianteId);
+  return await this.request(`/publisher/estudiante/cursos?estudianteId=${estudianteId}`);
+}
+
 
     // ✅ SOLO el método para llamar a la API - sin lógica de UI
     async eliminarTarea(idTarea) {
