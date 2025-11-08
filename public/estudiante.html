@@ -125,6 +125,14 @@
         opacity: 1;
       }
     }
+    .estado-conectado {
+  color: #16c60c;     
+  font-size: 14px;
+  font-weight: bold;
+  margin-right: 10px;   /* ✅ Para separarlo de la campana */
+}
+
+
   </style>
 </head>
 <body>
@@ -143,6 +151,8 @@
   <div class="header-right">
     <!-- Icono de Notificación con Contador -->
     <div class="notification-icon-container">
+      <span id="estado-conexion" class="estado-conectado">● Conectado</span>
+
       <i class="fas fa-bell notification-icon" id="bell-icon"></i>
       <span class="notification-counter" id="notification-counter">0</span>
 
@@ -151,6 +161,9 @@
         <h4>Notificaciones</h4>
         <div id="notificaciones-lista">
           <p class="empty-message">Cargando notificaciones...</p>
+        </div>
+        <div style="text-align:center; margin-top:10px;">
+          <button id="ver-todas-notificaciones" class="btn-ver-detalles">Ver todas</button>
         </div>
       </div>
     </div>
@@ -174,7 +187,22 @@
   </main>
 
   <script>
+    async function cargarFooter() {
+  try {
+    const footerContainer = document.getElementById('footer-container');
+    if (!footerContainer) return;
+
+    const response = await fetch('footer.html');
+    const html = await response.text();
+    footerContainer.innerHTML = html;
+
+  } catch (error) {
+    console.error('Error cargando footer:', error);
+  }
+}
+
     document.addEventListener('DOMContentLoaded', async () => {
+      cargarFooter(); 
       // Cargar información del usuario
       cargarInformacionUsuario();
 
@@ -183,6 +211,15 @@
 
       // Configurar event listeners
       configurarEventListeners();
+      // Botón Ver todas notificaciones
+        const btnVerTodas = document.getElementById('ver-todas-notificaciones');
+  if (btnVerTodas) {
+    btnVerTodas.addEventListener('click', (e) => {
+      e.preventDefault();
+      cargarTodasNotificaciones();
+    });
+  }
+
 
       // ====================================================================
       // === FUNCIONES PRINCIPALES ===
@@ -362,6 +399,7 @@
       // ====================================================================
 
       async function cargarContenidoAreaPersonal() {
+
         const contenido = document.getElementById('contenido-dinamico');
         if (!contenido) return;
 
@@ -382,7 +420,10 @@
         }
       }
 
+      
+
       async function cargarContenidoCursos() {
+
         const contenido = document.getElementById('contenido-dinamico');
         if (!contenido) return;
 
@@ -396,12 +437,82 @@
           setTimeout(() => {
             inicializarMisCursos();
           }, 100);
+const btnVerTodas = document.getElementById('ver-todas-notificaciones');
+if (btnVerTodas) {
+  btnVerTodas.addEventListener('click', (e) => {
+    e.preventDefault();
+    cargarTodasNotificaciones();
+  });
+}
+
 
         } catch (error) {
           console.error('Error cargando mis cursos:', error);
           contenido.innerHTML = '<div class="error-message">Error al cargar el contenido</div>';
         }
       }
+
+      async function cargarTodasNotificaciones() {
+  const contenido = document.getElementById('contenido-dinamico');
+  if (!contenido) return;
+
+  try {
+    const response = await fetch('todas-notificaciones.html');
+    const html = await response.text();
+    contenido.innerHTML = html;
+
+    // Inicializar la funcionalidad de la lista y detalle de notificaciones
+    setTimeout(() => {
+      inicializarTodasNotificaciones();
+    }, 100);
+
+  } catch (error) {
+    console.error('Error cargando todas las notificaciones:', error);
+    contenido.innerHTML = '<div class="error-message">Error al cargar las notificaciones</div>';
+  }
+}
+function inicializarTodasNotificaciones() {
+  const listaContainer = document.getElementById('notificaciones-lista');
+  const detalleContainer = document.getElementById('notificacion-detalle');
+
+  if (!listaContainer || !detalleContainer) return;
+
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  window.apiService.obtenerNotificaciones(usuario.id).then(notificaciones => {
+    if (!notificaciones || notificaciones.length === 0) {
+      listaContainer.innerHTML = '<p class="empty-message">No hay notificaciones nuevas.</p>';
+      return;
+    }
+
+    listaContainer.innerHTML = notificaciones.map(n => `
+      <div class="notificacion-item ${n.estado === 'Pendiente' ? 'unread' : ''}" data-id="${n.id_notificacion}">
+        <strong>${n.titulo}</strong>
+        <small>${n.fecha_envio ? new Date(n.fecha_envio).toLocaleString('es-EC') : ''}</small>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.notificacion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.notificacion-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        const notif = notificaciones.find(n => n.id_notificacion == item.dataset.id);
+        detalleContainer.innerHTML = notif ? `
+          <h3>${notif.titulo}</h3>
+          <p>${notif.mensaje}</p>
+          ${notif.vencimiento ? `<p><strong>Vencimiento:</strong> ${notif.vencimiento}</p>` : ''}
+          ${notif.tipo === 'actividad' && notif.enlace ? `<a href="${notif.enlace}" class="ir-actividad">Ir a la actividad</a>` : ''}
+        ` : '<p class="empty-message">No se encontró la notificación</p>';
+      });
+    });
+
+  }).catch(err => {
+    console.error('Error cargando notificaciones para todas:', err);
+    listaContainer.innerHTML = '<p class="empty-message">Error al cargar las notificaciones</p>';
+  });
+}
+
 
       async function inicializarAreaPersonal() {
         try {
@@ -730,7 +841,10 @@
         toast.remove();
       }, 5000);
     }
+    
   </script>
+  <div id="footer-container"></div>
+
 </body>
 </html>
 

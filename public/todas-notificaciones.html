@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notificaciones - Área Personal</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+  }
+
+  .notificaciones-container {
+    display: flex;
+    height: 90vh;
+    margin: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+  /* Lado izquierdo - Lista */
+  .notificaciones-lista {
+    width: 35%;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+  }
+
+  .notificacion-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+
+  .notificacion-item:hover,
+  .notificacion-item.active {
+    background: #007bff;
+    color: #fff;
+  }
+
+  .notificacion-item small {
+    display: block;
+    color: #888;
+    margin-top: 5px;
+  }
+
+  /* Lado derecho - Detalle */
+  .notificacion-detalle {
+    width: 65%;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .notificacion-detalle h3 {
+    margin-top: 0;
+  }
+
+  .ir-actividad {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 15px;
+    background: #28a745;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+
+  .ir-actividad:hover {
+    background: #218838;
+  }
+
+  .empty-message {
+    padding: 20px;
+    color: #666;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="notificaciones-container">
+  <!-- Lado izquierdo: Lista -->
+  <div class="notificaciones-lista" id="notificaciones-lista">
+    <!-- Se llenará dinámicamente -->
+  </div>
+
+  <!-- Lado derecho: Detalle -->
+  <div class="notificacion-detalle" id="notificacion-detalle">
+    <div class="empty-message">Selecciona una notificación para ver los detalles</div>
+  </div>
+</div>
+
+<script>
+  const listaContainer = document.getElementById('notificaciones-lista');
+  const detalleContainer = document.getElementById('notificacion-detalle');
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  window.apiService.obtenerNotificaciones(usuario.id)
+    .then(notificaciones => {
+      renderLista(notificaciones);
+    })
+    .catch(err => {
+      listaContainer.innerHTML = '<p class="empty-message">Error al cargar notificaciones</p>';
+      console.error(err);
+    });
+
+  function renderLista(notificaciones) {
+    if (!notificaciones || notificaciones.length === 0) {
+      listaContainer.innerHTML = '<p class="empty-message">No hay notificaciones</p>';
+      return;
+    }
+
+    listaContainer.innerHTML = notificaciones.map(n => `
+      <div class="notificacion-item" data-id="${n.id_notificacion}">
+        <strong>${n.titulo}</strong>
+        <small>${n.fecha_envio ? new Date(n.fecha_envio).toLocaleString('es-EC') : ''}</small>
+      </div>
+    `).join('');
+
+    // Añadir eventos
+    document.querySelectorAll('.notificacion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.notificacion-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        mostrarDetalle(notificaciones.find(n => n.id_notificacion == item.dataset.id));
+      });
+    });
+  }
+
+  function mostrarDetalle(notif) {
+    if (!notif) return;
+    detalleContainer.innerHTML = `
+      <h3>${notif.titulo}</h3>
+      <p>${notif.mensaje}</p>
+      ${notif.vencimiento ? `<p><strong>Vencimiento:</strong> ${notif.vencimiento}</p>` : ''}
+      ${notif.tipo === 'actividad' && notif.enlace ? `<a href="${notif.enlace}" class="ir-actividad">Ir a la actividad</a>` : ''}
+    `;
+  }
+</script>
+
+
+</body>
+</html>
