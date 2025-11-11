@@ -1,5 +1,8 @@
-// public/js/config.js
+// public/js/config.js - CONFIGURACIÓN CORREGIDA
 window.APP_CONFIG = {
-    API_BASE_URL: 'http://localhost:3002/api/v1',  // Cambia a localhost para desarrollo
-    SOCKET_URL: 'http://localhost:3002'
+    // ✅ APUNTAR AL BACKEND, no al frontend
+    API_BASE_URL: 'http://192.168.69.134:3002/api/v1',
+    SOCKET_URL: 'http://192.168.69.134:3002'
 };
+
+console.log('✅ Configuración cargada:', window.APP_CONFIG);

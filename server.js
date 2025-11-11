@@ -16,6 +16,7 @@ const io = new Server(server, {
 });
 
 const PORT = 3001; // Usamos el puerto del primer server.js (ajusta si prefieres otro)
+const HOST = '0.0.0.0';
 
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
@@ -23,7 +24,7 @@ app.use(express.json());
 
 // Conexión a MySQL en Docker (puerto 3307)
 const db = mysql.createConnection({
-  host: "localhost",
+  host: "192.168.100.41",
   port: 3307,
   user: "root",
   password: "root",
@@ -67,66 +68,81 @@ app.get('/', (req, res) => {
 });
 
 // LOGIN UNIFICADO
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
+// ==== REEMPLAZAR TODO EL BLOQUE DE LOGIN ACTUAL ====
 
-  console.log('🔐 Intento de login:', email);
+// LOGIN INTELIGENTE - BACKEND + FALLBACK LOCAL
+app.post('/login', async (req, res) => {
+  const { email, password, correo, contrasena } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ mensaje: "Email y contraseña son requeridos" });
-  }
+  // ✅ Soporta ambos formatos
+  const userEmail = email || correo;
+  const userPassword = password || contrasena;
 
-  if (mysqlDisponible) {
-    const sql = "SELECT * FROM usuarios WHERE correo = ? AND contrasena = ?";
-    db.query(sql, [email, password], (err, results) => {
-      if (err) {
-        console.error("❌ Error en consulta MySQL, usando datos de prueba para login:", err.message);
-        loginConDatosPrueba(email, password, res, usuariosPruebaLogin); // Usa los datos de prueba específicos para login
-        return;
-      }
+  console.log('🔐 Intento de login:', userEmail);
 
-      if (results.length === 0) {
-        console.log("❌ Credenciales incorrectas para:", email);
-        return res.status(401).json({ mensaje: "Credenciales incorrectas" });
-      }
-
-      const user = results[0];
-      console.log(`✅ Usuario logueado (MySQL): ${user.nombre} (${user.rol})`);
-
-      res.json({
-        rol: user.rol,
-        nombre: user.nombre,
-        id: user.id_usuario,
-        email: user.correo
-      });
+  if (!userEmail || !userPassword) {
+    return res.status(400).json({ 
+      mensaje: "Email y contraseña son requeridos"
     });
-  } else {
-    // Si MySQL no está disponible, se intenta con los datos de prueba de login
-    loginConDatosPrueba(email, password, res, usuariosPruebaLogin);
   }
-});
 
-// Función helper para login con datos de prueba (ahora recibe los datos de prueba)
-function loginConDatosPrueba(email, password, res, datosPrueba) {
-  const usuario = datosPrueba.find(u =>
-    u.correo.toLowerCase() === email.trim().toLowerCase() &&
-    u.contrasena === password.trim()
+  // ✅ PRIMERO intentar con el BACKEND
+  try {
+    console.log('🔄 Intentando conectar con backend NestJS...');
+    
+    const backendResponse = await fetch('http://192.168.69.134:3002/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: userEmail, 
+        password: userPassword 
+      })
+    });
+
+    console.log('📨 Backend respondió - Status:', backendResponse.status);
+
+    if (backendResponse.ok) {
+      const userData = await backendResponse.json();
+      console.log('✅ Login exitoso VÍA BACKEND:', userData.nombre || userData.rol);
+      return res.json(userData);
+    } else {
+      console.log('❌ Backend rechazó las credenciales');
+      // Continuar con login local...
+    }
+
+  } catch (error) {
+    console.error('❌ Error de conexión con backend:', error.message);
+    // Continuar con login local...
+  }
+
+  // ✅ FALLBACK: SISTEMA DE LOGIN LOCAL
+  console.log('🔄 Usando sistema de login LOCAL...');
+  
+  const usuario = usuariosPruebaLogin.find(u =>
+    u.correo.toLowerCase() === userEmail.trim().toLowerCase() &&
+    u.contrasena === userPassword.trim()
   );
 
   if (!usuario) {
-    console.log("❌ Credenciales incorrectas para:", email);
-    return res.status(401).json({ mensaje: "Credenciales incorrectas" });
+    console.log("❌ Credenciales incorrectas en modo local también");
+    return res.status(401).json({ 
+      mensaje: "Credenciales incorrectas",
+      sugerencia: "Usa: lesly@educa.com/12345 (Docente) o shirley@educa.com/12345 (Estudiante)"
+    });
   }
 
-  console.log(`✅ Usuario logueado (Datos prueba): ${usuario.nombre} (${usuario.rol})`);
+  console.log('✅ Login LOCAL exitoso: ${usuario.nombre} (${usuario.rol})');
 
   res.json({
     rol: usuario.rol,
     nombre: usuario.nombre,
     id: usuario.id_usuario,
-    email: usuario.correo
+    email: usuario.correo,
+    fuente: "sistema_local" // Para saber que viene del frontend
   });
-}
+});
 
 // API de tareas
 app.get('/api/tareas', (req, res) => {
@@ -369,11 +385,17 @@ app.get('/debug/database', (req, res) => {
   }
 });
 
-// ⚠️ ESTO DEBE ESTAR AL FINAL - INICIAR EL SERVIDOR
-server.listen(PORT, () => { // Usamos 'server.listen' en lugar de 'app.listen' para que Socket.IO funcione
-  console.log(`🚀 Servidor Express y Socket.IO ejecutándose en: http://localhost:${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔗 Debug users: http://localhost:${PORT}/debug/users`);
-  console.log(`🔗 Database info: http://localhost:${PORT}/debug/database`);
-  console.log(`🐳 MySQL configurado para Docker en puerto: 3307`);
+// ⚠ CORREGIR LOS LOGS - USAR BACKTICKS (`)
+server.listen(PORT, HOST, () => {
+  console.log('🚀 Servidor Express y Socket.IO ejecutándose en:');
+  console.log('   http://localhost:${PORT}');
+  console.log('   http://172.25.235.90:${PORT}');
+  console.log('🔗 Health check: http://172.25.235.90:${PORT}/health');
+  console.log('🔗 Debug users: http://172.25.235.90:${PORT}/debug/users');
+  console.log('🔗 Database info: http://172.25.235.90:${PORT}/debug/database');
+  console.log('🔗 Backend API: http://172.25.235.90:3002/api/v1');
+  
+  if (!mysqlDisponible) {
+    console.log('📊 Usando datos de prueba temporalmente...');
+  }
 });

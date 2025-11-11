@@ -1,7 +1,7 @@
 // public/js/api.js
 class ApiService {
     constructor() {
-        this.BASE_URL = window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : 'http://localhost:3002/api/v1';
+        this.BASE_URL = window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : 'http://192.168.120.134:3002/api/v1';
         console.log('✅ ApiService inicializado con URL:', this.BASE_URL);
     }
 
