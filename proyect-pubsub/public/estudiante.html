@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Área Personal - Estudiante</title>
+  <link rel="stylesheet" href="estudiante.css">
+  <link rel="stylesheet" href="area-personal.css">
+  <link rel="stylesheet" href="area-estudiante.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+</head>
+<body>
+  <!-- CABECERA/NAVBAR -->
+<header class="main-header">
+  <div class="header-left">
+    <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+    <span class="site-title">E-LEARNING</span>
+  </div>
+
+  <nav class="header-nav">
+    <a href="#" class="nav-item active" id="link-area">Área personal</a>
+    <a href="#" class="nav-item" id="link-cursos">Mis cursos</a>
+  </nav>
+
+  <div class="header-right">
+    <!-- Icono de Notificación con Contador -->
+    <div class="notification-icon-container">
+      <span id="estado-conexion" class="estado-conectado">● Conectado</span>
+
+      <i class="fas fa-bell notification-icon" id="bell-icon"></i>
+      <span class="notification-counter" id="notification-counter">0</span>
+
+      <!-- Contenedor desplegable para las notificaciones -->
+      <div class="notification-dropdown" id="notification-dropdown">
+        <h4>Notificaciones</h4>
+        <div id="notificaciones-lista">
+          <p class="empty-message">Cargando notificaciones...</p>
+        </div>
+        <div style="text-align:center; margin-top:10px;">
+          <button id="ver-todas-notificaciones" class="btn-ver-detalles">Ver todas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del usuario -->
+    <div class="user-section">
+      <span class="user-name" id="user-name">Cargando...</span>
+      <div class="user-avatar" id="user-avatar">?</div>
+
+      <!-- Menú desplegable -->
+      <div class="user-menu" id="user-menu">
+        <button id="logout-btn">Salir</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main id="contenido-dinamico" class="main-content">
+    <!-- El contenido se cargará dinámicamente como en el original -->
+  </main>
+
+  <script>
+    async function cargarFooter() {
+  try {
+    const footerContainer = document.getElementById('footer-container');
+    if (!footerContainer) return;
+
+    const response = await fetch('footer.html');
+    const html = await response.text();
+    footerContainer.innerHTML = html;
+
+  } catch (error) {
+    console.error('Error cargando footer:', error);
+  }
+}
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      cargarFooter(); 
+      // Cargar información del usuario
+      cargarInformacionUsuario();
+
+      // Cargar notificaciones del backend
+      await cargarNotificacionesBackend();
+
+      // Configurar event listeners
+      configurarEventListeners();
+      // Botón Ver todas notificaciones
+        const btnVerTodas = document.getElementById('ver-todas-notificaciones');
+  if (btnVerTodas) {
+    btnVerTodas.addEventListener('click', (e) => {
+      e.preventDefault();
+      cargarTodasNotificaciones();
+    });
+  }
+
+
+      // ====================================================================
+      // === FUNCIONES PRINCIPALES ===
+      // ====================================================================
+
+      async function cargarNotificacionesBackend() {
+        try {
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          if (!usuario.id) {
+            console.warn('No hay información de usuario para cargar notificaciones');
+            return;
+          }
+
+          // Obtener notificaciones del backend NestJS
+          const notificaciones = await window.apiService.obtenerNotificaciones(usuario.id);
+          console.log('📥 Notificaciones cargadas del backend:', notificaciones);
+          
+          // Actualizar contador
+          const notificacionesNoLeidas = notificaciones.filter(n => n.estado === 'Pendiente');
+          actualizarContadorNotificaciones(notificacionesNoLeidas.length);
+
+          // Actualizar lista de notificaciones
+          actualizarListaNotificaciones(notificaciones);
+
+        } catch (error) {
+          console.error('❌ Error cargando notificaciones del backend:', error);
+          mostrarErrorNotificaciones();
+        }
+      }
+
+      function actualizarContadorNotificaciones(cantidad) {
+        const notificationCounter = document.getElementById('notification-counter');
+        if (notificationCounter) {
+          notificationCounter.textContent = cantidad;
+          // Mostrar/ocultar el contador
+          notificationCounter.style.display = cantidad > 0 ? 'inline-block' : 'none';
+        }
+      }
+
+      function actualizarListaNotificaciones(notificaciones) {
+        const notificacionesLista = document.getElementById('notificaciones-lista');
+        if (!notificacionesLista) return;
+
+        if (!notificaciones || notificaciones.length === 0) {
+          notificacionesLista.innerHTML = '<p class="empty-message">No hay notificaciones nuevas.</p>';
+          return;
+        }
+
+        // Mostrar las últimas 5 notificaciones
+        const notificacionesRecientes = notificaciones
+          .sort((a, b) => new Date(b.fecha_envio) - new Date(a.fecha_envio))
+          .slice(0, 5);
+
+        notificacionesLista.innerHTML = notificacionesRecientes.map(notif => `
+          <div class="notification-item ${notif.estado === 'Pendiente' ? 'unread' : ''}">
+            <div class="notification-content">
+              <p class="notification-message">${notif.mensaje}</p>
+              <span class="notification-date">
+                ${new Date(notif.fecha_envio).toLocaleDateString('es-EC')}
+              </span>
+            </div>
+            ${notif.estado === 'Pendiente' ? 
+              `<button class="mark-read-btn" onclick="marcarNotificacionLeida(${notif.id_notificacion})">
+                <i class="fas fa-check"></i>
+              </button>` : ''}
+          </div>
+        `).join('');
+      }
+
+      function mostrarErrorNotificaciones() {
+        const notificacionesLista = document.getElementById('notificaciones-lista');
+        if (notificacionesLista) {
+          notificacionesLista.innerHTML = '<p class="empty-message">Error al cargar notificaciones</p>';
+        }
+      }
+
+      function cargarInformacionUsuario() {
+        try {
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          const userNameElement = document.getElementById('user-name');
+          const userAvatarElement = document.getElementById('user-avatar');
+
+          if (usuario.nombre && userNameElement) {
+            userNameElement.textContent = usuario.nombre.toUpperCase();
+            
+            // Generar iniciales para el avatar (igual que en el original)
+            const iniciales = usuario.nombre
+              .split(' ')
+              .map(p => p[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            
+            if (userAvatarElement) {
+              userAvatarElement.textContent = iniciales;
+            }
+          }
+        } catch (error) {
+          console.error('Error cargando información del usuario:', error);
+        }
+      }
+
+      function configurarEventListeners() {
+        // Notificaciones dropdown (igual que en el original)
+        const bellIcon = document.getElementById('bell-icon');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        
+        if (bellIcon && notificationDropdown) {
+          bellIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+          });
+        }
+
+        // Cerrar dropdown al hacer clic fuera
+        window.addEventListener('click', () => {
+          const dropdown = document.getElementById('notification-dropdown');
+          if (dropdown && dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+          }
+        });
+
+        // Menú de usuario (igual que en el original)
+        const userAvatar = document.getElementById('user-avatar');
+        const userMenu = document.getElementById('user-menu');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        if (userAvatar && userMenu && logoutBtn) {
+          userAvatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('show');
+          });
+
+          logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('usuario');
+            window.location.href = 'login.html';
+          });
+        }
+
+        // Cerrar menú usuario al hacer clic fuera
+        window.addEventListener('click', (e) => {
+          const userMenu = document.getElementById('user-menu');
+          const userAvatar = document.getElementById('user-avatar');
+          
+          if (userMenu && userMenu.classList.contains('show')) {
+            if (!userAvatar.contains(e.target) && !userMenu.contains(e.target)) {
+              userMenu.classList.remove('show');
+            }
+          }
+        });
+
+        // Navegación entre páginas
+        const linkArea = document.getElementById('link-area');
+        const linkCursos = document.getElementById('link-cursos');
+
+        if (linkArea && linkCursos) {
+          linkArea.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Marcar como activo y cargar contenido del área personal
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            linkArea.classList.add('active');
+            cargarContenidoAreaPersonal();
+          });
+
+          linkCursos.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Marcar como activo y cargar contenido de cursos
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            linkCursos.classList.add('active');
+            cargarContenidoCursos();
+          });
+        }
+      }
+
+      // ====================================================================
+      // === CARGA DE CONTENIDO DINÁMICO ===
+      // ====================================================================
+
+      async function cargarContenidoAreaPersonal() {
+
+        const contenido = document.getElementById('contenido-dinamico');
+        if (!contenido) return;
+
+        try {
+          // Cargar el HTML del área personal
+          const response = await fetch('area-personal.html');
+          const html = await response.text();
+          contenido.innerHTML = html;
+
+          // Una vez cargado el HTML, inicializar la funcionalidad específica
+          setTimeout(() => {
+            inicializarAreaPersonal();
+          }, 100);
+
+        } catch (error) {
+          console.error('Error cargando área personal:', error);
+          contenido.innerHTML = '<div class="error-message">Error al cargar el contenido</div>';
+        }
+      }
+
+      
+
+      async function cargarContenidoCursos() {
+
+        const contenido = document.getElementById('contenido-dinamico');
+        if (!contenido) return;
+
+        try {
+          // Cargar el HTML de mis cursos
+          const response = await fetch('mis-cursos.html');
+          const html = await response.text();
+          contenido.innerHTML = html;
+
+          // Una vez cargado el HTML, inicializar la funcionalidad específica
+          setTimeout(() => {
+            inicializarMisCursos();
+          }, 100);
+const btnVerTodas = document.getElementById('ver-todas-notificaciones');
+if (btnVerTodas) {
+  btnVerTodas.addEventListener('click', (e) => {
+    e.preventDefault();
+    cargarTodasNotificaciones();
+  });
+}
+
+
+        } catch (error) {
+          console.error('Error cargando mis cursos:', error);
+          contenido.innerHTML = '<div class="error-message">Error al cargar el contenido</div>';
+        }
+      }
+
+      async function cargarTodasNotificaciones() {
+  const contenido = document.getElementById('contenido-dinamico');
+  if (!contenido) return;
+
+  try {
+    const response = await fetch('todas-notificaciones.html');
+    const html = await response.text();
+    contenido.innerHTML = html;
+
+    // Inicializar la funcionalidad de la lista y detalle de notificaciones
+    setTimeout(() => {
+      inicializarTodasNotificaciones();
+    }, 100);
+
+  } catch (error) {
+    console.error('Error cargando todas las notificaciones:', error);
+    contenido.innerHTML = '<div class="error-message">Error al cargar las notificaciones</div>';
+  }
+}
+function inicializarTodasNotificaciones() {
+  const listaContainer = document.getElementById('notificaciones-lista');
+  const detalleContainer = document.getElementById('notificacion-detalle');
+
+  if (!listaContainer || !detalleContainer) return;
+
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  window.apiService.obtenerNotificaciones(usuario.id).then(notificaciones => {
+    if (!notificaciones || notificaciones.length === 0) {
+      listaContainer.innerHTML = '<p class="empty-message">No hay notificaciones nuevas.</p>';
+      return;
+    }
+
+    listaContainer.innerHTML = notificaciones.map(n => `
+      <div class="notificacion-item ${n.estado === 'Pendiente' ? 'unread' : ''}" data-id="${n.id_notificacion}">
+        <strong>${n.titulo}</strong>
+        <small>${n.fecha_envio ? new Date(n.fecha_envio).toLocaleString('es-EC') : ''}</small>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.notificacion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.notificacion-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        const notif = notificaciones.find(n => n.id_notificacion == item.dataset.id);
+        detalleContainer.innerHTML = notif ? `
+          <h3>${notif.titulo}</h3>
+          <p>${notif.mensaje}</p>
+          ${notif.vencimiento ? `<p><strong>Vencimiento:</strong> ${notif.vencimiento}</p>` : ''}
+          ${notif.tipo === 'actividad' && notif.enlace ? `<a href="${notif.enlace}" class="ir-actividad">Ir a la actividad</a>` : ''}
+        ` : '<p class="empty-message">No se encontró la notificación</p>';
+      });
+    });
+
+  }).catch(err => {
+    console.error('Error cargando notificaciones para todas:', err);
+    listaContainer.innerHTML = '<p class="empty-message">Error al cargar las notificaciones</p>';
+  });
+}
+
+
+      async function inicializarAreaPersonal() {
+        try {
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          
+          if (!usuario.id) {
+            console.error('No se pudo obtener el ID del estudiante');
+            mostrarErrorAreaPersonal('No se pudo identificar al estudiante');
+            return;
+          }
+
+          console.log('🎯 Inicializando área personal para estudiante:', usuario.id);
+
+          // 1. Obtener los cursos del estudiante
+          const cursos = await window.apiService.obtenerCursosDelEstudiante(usuario.id);
+          console.log('📚 Cursos del estudiante:', cursos);
+
+          // 2. Obtener tareas solo de los cursos del estudiante
+          let tareasFiltradas = [];
+          
+          if (cursos && cursos.length > 0) {
+            // Obtener IDs de cursos del estudiante
+            const idsCursos = cursos.map(curso => curso.id_curso);
+            console.log('🎓 IDs de cursos del estudiante:', idsCursos);
+            
+            // Obtener todas las tareas
+            const todasLasTareas = await window.apiService.consultarTareas({});
+            console.log('📝 Todas las tareas disponibles:', todasLasTareas);
+            
+            // Filtrar tareas solo para los cursos del estudiante
+            tareasFiltradas = todasLasTareas.filter(tarea => 
+              idsCursos.includes(tarea.id_curso)
+            );
+            
+            console.log('✅ Tareas filtradas para el estudiante:', tareasFiltradas);
+          } else {
+            console.log('ℹ️ El estudiante no está inscrito en ningún curso');
+          }
+
+          // 3. Inicializar timeline con las tareas filtradas
+          inicializarTimeline(tareasFiltradas, cursos);
+
+        } catch (error) {
+          console.error('Error inicializando área personal:', error);
+          mostrarErrorAreaPersonal('Error al cargar los datos: ' + error.message);
+        }
+      }
+
+      function inicializarTimeline(tareas, cursos = []) {
+        const timelineContainer = document.getElementById('timeline-container');
+        if (!timelineContainer) return;
+
+        // Actualizar también la sección de resumen de cursos
+        actualizarResumenCursos(cursos);
+
+        if (!tareas || tareas.length === 0) {
+          timelineContainer.innerHTML = `
+            <div class="timeline-item">
+              <p class="timeline-date">No hay actividades recientes</p>
+              <p class="timeline-task">Las tareas aparecerán aquí cuando sean publicadas en tus cursos</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Ordenar tareas por fecha de publicación (más recientes primero)
+        const tareasOrdenadas = tareas
+          .sort((a, b) => new Date(b.fecha_publicacion) - new Date(a.fecha_publicacion))
+          .slice(0, 5); // Mostrar solo las 5 más recientes
+
+        timelineContainer.innerHTML = tareasOrdenadas.map(tarea => {
+          const fechaPublicacion = new Date(tarea.fecha_publicacion).toLocaleDateString('es-EC', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+          const fechaLimite = tarea.fecha_limite ? 
+            new Date(tarea.fecha_limite).toLocaleDateString('es-EC') : 'No especificada';
+
+          return `
+            <div class="timeline-item">
+              <p class="timeline-date">${fechaPublicacion}</p>
+              <p class="timeline-task"><strong>${tarea.titulo}</strong></p>
+              <span class="timeline-course">${obtenerNombreCurso(tarea.id_curso, cursos)}</span>
+              <p><strong>Fecha límite:</strong> ${fechaLimite}</p>
+              <p class="timeline-desc">${tarea.descripcion || 'Sin descripción'}</p>
+              <button onclick="verDetallesTarea(${tarea.id_tarea})" class="btn-ver-detalles">Ver detalles</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function actualizarResumenCursos(cursos) {
+        const resumenCursosContainer = document.getElementById('resumen-cursos');
+        if (!resumenCursosContainer) return;
+
+        if (!cursos || cursos.length === 0) {
+          resumenCursosContainer.innerHTML = `
+            <div class="curso-card">
+              <h4>No estás inscrito en ningún curso</h4>
+              <p>Contacta con tu docente para inscribirte en cursos.</p>
+            </div>
+          `;
+          return;
+        }
+
+        resumenCursosContainer.innerHTML = cursos.map(curso => `
+          <div class="curso-card">
+            <h4>${curso.nombre_curso || `Curso ${curso.id_curso}`}</h4>
+            <p>${curso.descripcion || 'Sin descripción disponible'}</p>
+            <span class="curso-badge">Curso ID: ${curso.id_curso}</span>
+          </div>
+        `).join('');
+      }
+
+      function obtenerNombreCurso(idCurso, cursos = []) {
+        // Buscar el nombre del curso en la lista de cursos del estudiante
+        const curso = cursos.find(c => c.id_curso === idCurso);
+        return curso ? curso.nombre_curso : `Curso ${idCurso}`;
+      }
+
+      function mostrarErrorAreaPersonal(mensaje = 'No se pudieron cargar las actividades') {
+        const timelineContainer = document.getElementById('timeline-container');
+        if (timelineContainer) {
+          timelineContainer.innerHTML = `
+            <div class="timeline-item error">
+              <p class="timeline-date">Error</p>
+              <p class="timeline-task">${mensaje}</p>
+              <button onclick="location.reload()" class="btn-reload">Reintentar</button>
+            </div>
+          `;
+        }
+      }
+
+      async function inicializarMisCursos() {
+        try {
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          if (!usuario.id) {
+            mostrarErrorCursos('No se pudo identificar al estudiante');
+            return;
+          }
+
+          console.log('🎓 Inicializando mis cursos para estudiante:', usuario.id);
+
+          // Obtener cursos del estudiante para la página de "Mis Cursos"
+          const cursos = await window.apiService.obtenerCursosDelEstudiante(usuario.id);
+          console.log('📚 Cursos para página Mis Cursos:', cursos);
+          
+          // Actualizar la lista de cursos en la página
+          actualizarListaCursos(cursos);
+
+        } catch (error) {
+          console.error('Error inicializando mis cursos:', error);
+          mostrarErrorCursos('Error al cargar los cursos: ' + error.message);
+        }
+      }
+
+      function actualizarListaCursos(cursos) {
+        const courseList = document.getElementById('course-list');
+        if (!courseList) return;
+
+        if (!cursos || cursos.length === 0) {
+          courseList.innerHTML = `
+            <div class="no-courses-message">
+              <h3>No estás inscrito en ningún curso</h3>
+              <p>Contacta con tu docente para inscribirte en cursos.</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Mostrar solo los cursos del estudiante
+        courseList.innerHTML = cursos.map(curso => {
+          const cursoId = curso.id_curso;
+          const cursoNombre = curso.nombre_curso || `Curso ${cursoId}`;
+          const imagenCurso = cursoId === 1 ? 
+            'https://images.unsplash.com/photo-1594915440248-1e419eba6611?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fHJlZGVzfGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=500' : 
+            'https://plus.unsplash.com/premium_photo-1683121710572-7723bd2e235d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW50ZWxpZ2VuY2lhJTIwYXJ0aWZpY2lhbHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=500';
+
+          return `
+            <article class="course-card">
+              <div class="course-image" style="background-image: url('${imagenCurso}');">
+                <span class="course-progress">0% completado</span>
+              </div>
+              <div class="course-info">
+                <h3 class="course-title">${cursoNombre}</h3>
+                <p class="course-teacher">Docente: Lesly</p>
+                <div class="course-actions">
+                  <button class="action-button view-tasks" onclick="verCurso(${cursoId}, '${cursoNombre}')">Ver Tareas</button>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function mostrarErrorCursos(mensaje) {
+        const courseList = document.getElementById('course-list');
+        if (courseList) {
+          courseList.innerHTML = `
+            <div class="error-message">
+              <p>${mensaje}</p>
+              <button onclick="location.reload()" class="btn-reload">Reintentar</button>
+            </div>
+          `;
+        }
+      }
+
+      // Cargar el contenido inicial (área personal por defecto)
+      await cargarContenidoAreaPersonal();
+
+      // Conectar WebSocket para notificaciones en tiempo real
+      conectarWebSockets();
+    });
+
+    // ====================================================================
+    // === FUNCIONES GLOBALES ===
+    // ====================================================================
+
+    async function marcarNotificacionLeida(idNotificacion) {
+      try {
+        await window.apiService.marcarNotificacionComoLeida(idNotificacion);
+        
+        // Recargar notificaciones para actualizar la UI
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const notificaciones = await window.apiService.obtenerNotificaciones(usuario.id);
+        const notificacionesNoLeidas = notificaciones.filter(n => n.estado === 'Pendiente');
+        
+        // Actualizar contador
+        const notificationCounter = document.getElementById('notification-counter');
+        if (notificationCounter) {
+          notificationCounter.textContent = notificacionesNoLeidas.length;
+          notificationCounter.style.display = notificacionesNoLeidas.length > 0 ? 'inline-block' : 'none';
+        }
+        
+        // Recargar lista de notificaciones
+        actualizarListaNotificaciones(notificaciones);
+        
+      } catch (error) {
+        console.error('Error marcando notificación como leída:', error);
+      }
+    }
+
+    function verDetallesTarea(idTarea) {
+      // Redirigir a la página de detalles de la tarea o mostrar modal
+      alert(`Mostrando detalles de la tarea ID: ${idTarea}`);
+      // En una implementación real, podrías usar:
+      // window.location.href = `detalles-tarea.html?id=${idTarea}`;
+    }
+
+    function verCurso(idCurso, nombreCurso) {
+      // Redirigir a la página específica del curso
+      const paginaCurso = idCurso === 1 ? 'redes.html' : 'curso-ia.html';
+      window.location.href = `${paginaCurso}?curso=${idCurso}&nombre=${encodeURIComponent(nombreCurso)}`;
+    }
+
+    function conectarWebSockets() {
+      // Conectar a WebSocket para notificaciones en tiempo real
+      const socket = io(window.APP_CONFIG.SOCKET_URL);
+
+      socket.on('connect', () => {
+        console.log('✅ Conectado al servidor de notificaciones en tiempo real');
+      });
+
+      socket.on('notificacion_estudiante', (data) => {
+        console.log('🔔 Nueva notificación en tiempo real:', data);
+        
+        // Actualizar contador
+        const counter = document.getElementById('notification-counter');
+        if (counter) {
+          const currentCount = parseInt(counter.textContent) || 0;
+          counter.textContent = currentCount + 1;
+          counter.style.display = 'inline-block';
+        }
+        
+        // Mostrar notificación toast
+        mostrarNotificacionToast(data.mensaje);
+        
+        // Recargar notificaciones después de un breve delay
+        setTimeout(async () => {
+          try {
+            const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+            const notificaciones = await window.apiService.obtenerNotificaciones(usuario.id);
+            actualizarListaNotificaciones(notificaciones);
+          } catch (error) {
+            console.error('Error recargando notificaciones:', error);
+          }
+        }, 1000);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('🔴 Desconectado del servidor de notificaciones');
+      });
+    }
+
+    function mostrarNotificacionToast(mensaje) {
+      // Crear una notificación toast temporal
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #007bff;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 300px;
+        animation: slideIn 0.3s ease;
+      `;
+      
+      toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fas fa-bell" style="font-size: 1.2em;"></i>
+          <span>${mensaje}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Remover después de 5 segundos
+      setTimeout(() => {
+        toast.remove();
+      }, 5000);
+    }
+    
+  </script>
+  <div id="footer-container"></div>
+
+</body>
+</html>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>

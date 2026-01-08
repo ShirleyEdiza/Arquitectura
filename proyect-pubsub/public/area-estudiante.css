@@ -1,0 +1,138 @@
+/* ===============================
+   RESUMEN DE CURSOS
+================================ */
+.resumen-cursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.curso-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-left: 4px solid #007bff;
+  position: relative;
+}
+
+.curso-card h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.curso-card p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.curso-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #007bff;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+/* ===============================
+   BOTONES
+================================ */
+.btn-ver-detalles {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-top: 10px;
+}
+
+.btn-ver-detalles:hover {
+  background: #0056b3;
+}
+
+.btn-reload {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn-reload:hover {
+  background: #218838;
+}
+
+/* ===============================
+   MENSAJES Y ERRORES
+================================ */
+.timeline-item.error {
+  border-left-color: #dc3545;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 5px;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.no-courses-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* ===============================
+   TIMELINE
+================================ */
+.timeline-course {
+  display: inline-block;
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin: 5px 0;
+}
+
+.timeline-desc {
+  color: #666;
+  font-size: 0.9em;
+  margin: 5px 0;
+}
+
+/* ===============================
+   ANIMACIONES
+================================ */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ===============================
+   ESTADO CONEXIÓN
+================================ */
+.estado-conectado {
+  color: #16c60c;
+  font-size: 14px;
+  font-weight: bold;
+  margin-right: 10px;
+}

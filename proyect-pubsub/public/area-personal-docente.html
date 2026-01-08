@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Área Personal - Docente</title>
+    <link rel="stylesheet" href="style-curso.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        .review-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .notification-bar {
+            padding: 10px;
+            background-color: #ffe4e1;
+            border: 1px solid #ffc9c9;
+            color: #dc3545;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .btn-limpiar {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-limpiar:hover {
+            background-color: #c82333;
+        }
+        .review-icon {
+            font-size: 24px;
+            color: #007bff;
+            margin-right: 15px;
+        }
+        .review-content {
+            flex-grow: 1;
+        }
+        .review-title {
+            font-weight: bold;
+            display: block;
+        }
+        .review-course {
+            color: #6c757d;
+            font-size: 0.9em;
+            display: block;
+        }
+        .review-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+        .status-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .status-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .btn-review {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        .btn-delete-task {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            margin-top: 5px;
+            padding: 0;
+            font-size: 1.1em;
+            transition: color 0.2s;
+        }
+        .btn-delete-task:hover {
+            color: #a71d2a;
+        }
+        .user-section {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #user-avatar-toggle {
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        #user-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 150px;
+        }
+        #user-menu-dropdown.show {
+            display: block;
+        }
+        #user-menu-dropdown button {
+            background: none;
+            border: none;
+            color: #d9534f;
+            padding: 10px 20px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        #user-menu-dropdown button:hover {
+            background: #f9f9f9;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #007bff;
+        }
+        .error-message {
+            background-color: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="https://media.istockphoto.com/id/1150645589/es/vector/logotipo-de-color-de-la-escuela.jpg?s=612x612&w=0&k=20&c=4K0K_XOQsRB3x5bjyD0HGsdo7__W9dvXjrSFsegjgsY=" alt="Logo" class="logo">
+            <span class="site-title">E-LEARNING</span>
+        </div>
+        <nav class="header-nav">
+            <a href="/area-personal-docente.html" class="nav-item active" id="link-area">Área personal</a>
+            <a href="/docente.html" class="nav-item" id="link-cursos">Mis cursos</a>
+        </nav>
+        <div class="header-right">
+        <div class="user-section">
+            <span class="user-name" id="user-name">Cargando...</span>
+            
+            <div class="user-avatar" id="user-avatar-toggle">?</div>
+            
+            <div class="user-menu" id="user-menu-dropdown">
+                <button id="logout-btn">Salir</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-area">
+        <div class="content-header">
+            <h1>Área Personal del Docente</h1>
+            <p>Aquí encontrarás un resumen de tus actividades pendientes.</p>
+        </div>
+        
+        <section class="topic-section">
+            <div id="cleanup-message"></div>
+            <div id="status-message"></div>
+            
+            <h3><i class="fas fa-check-double"></i> Tareas Pendientes por Revisar</h3>
+            
+            <ul id="review-list">
+                <li class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="main-footer-bottom">
+        <div class="footer-columns">
+            <div class="footer-column"><h4>E-Learning</h4><p>Aulas virtuales...</p><a href="#" class="footer-link">Marzo 2025 - Julio 2025</a></div>
+            <div class="footer-column"><h4>Mis Cursos (Bloques)</h4>
+            <a href="/curso-docente.html?curso=clase-b&nombre=Redes%20y%20Conectividad" class="footer-link">Redes</a>
+             <a href="/curso-docente.html?curso=clase-c&nombre=INTELIGENCIA%20ARTIFICIAL" class="footer-link">Inteligencia Artificial</a>
+        </div>
+        <div class="footer-copyright"><p>© 2025 E-Learning. Todos los derechos reservados.</p></div>
+        <a href="#" id="scroll-to-top" class="scroll-top-btn"><i class="fas fa-arrow-up"></i></a>
+    </footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const reviewList = document.getElementById('review-list');
+        const cleanupMessage = document.getElementById('cleanup-message');
+        const statusMessage = document.getElementById('status-message');
+        const userNameElement = document.getElementById('user-name');
+        const userAvatarElement = document.getElementById('user-avatar-toggle');
+
+        // Cargar información del usuario
+        cargarInformacionUsuario();
+
+        // ====================================================================
+        // === CARGA DE TAREAS DESDE BACKEND NESTJS ===
+        // ====================================================================
+        
+        await cargarTareasDelBackend();
+
+        // ====================================================================
+        // === LÓGICA DE BORRADO ===
+        // ====================================================================
+        reviewList.addEventListener('click', async (e) => {
+            const deleteButton = e.target.closest('.btn-delete-task');
+            
+            if (!deleteButton) {
+                return;
+            }
+
+            e.preventDefault(); 
+            
+            if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
+                return;
+            }
+
+            const taskId = deleteButton.dataset.taskId;
+            
+            try {
+                // Intentar eliminar del backend
+                await eliminarTareaDelBackend(taskId);
+                
+                // Eliminar del DOM
+                deleteButton.closest('li.review-item').remove();
+                
+                // Verificar si quedan tareas
+                if (reviewList.children.length === 0) {
+                    mostrarMensajeVacio();
+                }
+                
+                mostrarMensajeEstado('✅ Tarea eliminada correctamente', 'success');
+                
+            } catch (error) {
+                console.error('Error eliminando tarea:', error);
+                mostrarMensajeEstado('❌ Error al eliminar la tarea', 'error');
+            }
+        });
+
+        // ====================================================================
+        // === FUNCIONES PRINCIPALES ===
+        // ====================================================================
+        
+        async function cargarTareasDelBackend() {
+            try {
+                mostrarEstadoCarga('Cargando tareas...');
+                
+                // Obtener todas las tareas del backend
+                const tareas = await window.apiService.obtenerTareas();
+                console.log('📥 Tareas cargadas del backend:', tareas);
+                
+                if (tareas && tareas.length > 0) {
+                    mostrarTareas(tareas);
+                    ocultarMensajeLimpieza();
+                    mostrarMensajeEstado(`✅ Se cargaron ${tareas.length} tareas`, 'success');
+                } else {
+                    mostrarMensajeVacio();
+                    mostrarMensajeLimpieza();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando tareas del backend:', error);
+                mostrarMensajeEstado('❌ Error al cargar las tareas', 'error');
+                cargarTareasLocales();
+            }
+        }
+
+        function mostrarTareas(tareas) {
+            reviewList.innerHTML = '';
+            
+            tareas.forEach(tarea => {
+                mostrarTareaPorRevisar({
+                    taskId: tarea.id_tarea,
+                    titulo: tarea.titulo,
+                    cursoNombre: tarea.nombre_curso || obtenerNombreCurso(tarea.id_curso),
+                    descripcion: tarea.descripcion,
+                    fechaLimite: tarea.fecha_limite && tarea.hora_limite 
+                        ? `${tarea.fecha_limite}T${tarea.hora_limite}` 
+                        : null,
+                    material: tarea.archivo_material,
+                    fechaPublicacion: tarea.fecha_publicacion,
+                    entregas: tarea.entregas || 0 // Asumiendo que tienes este campo
+                });
+            });
+        }
+
+        function mostrarTareaPorRevisar(data) {
+            let iconClass = 'fas fa-file-alt';
+            if (data.material) iconClass = 'fas fa-paperclip';
+            if (data.cursoNombre?.includes('IA') || data.cursoNombre?.includes('Inteligencia')) iconClass = 'fas fa-database';
+            if (data.cursoNombre?.includes('Redes')) iconClass = 'fas fa-network-wired';
+
+            const item = document.createElement('li');
+            item.className = 'review-item';
+            
+            // Formatear fechas
+            let fechaInfo = '';
+            if (data.fechaLimite) {
+                try {
+                    const fecha = new Date(data.fechaLimite);
+                    fechaInfo = `<br><small><strong>Límite:</strong> ${fecha.toLocaleDateString('es-EC')} ${fecha.toLocaleTimeString('es-EC', {hour: '2-digit', minute:'2-digit'})}</small>`;
+                } catch (e) {
+                    console.warn('Error formateando fecha:', e);
+                }
+            }
+
+            let fechaPublicacionInfo = '';
+            if (data.fechaPublicacion) {
+                try {
+                    const fechaPub = new Date(data.fechaPublicacion);
+                    fechaPublicacionInfo = `<small><strong>Publicada:</strong> ${fechaPub.toLocaleDateString('es-EC')}</small>`;
+                } catch (e) {
+                    console.warn('Error formateando fecha de publicación:', e);
+                }
+            }
+            
+            item.innerHTML = `
+                <div class="review-icon">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="review-content">
+                    <span class="review-title">${data.titulo}</span>
+                    <span class="review-course">Curso: ${data.cursoNombre}</span>
+                    <p class="review-description">${data.descripcion || 'Sin descripción.'}</p>
+                    ${data.material ? `<small><strong>Material:</strong> ${data.material}</small><br>` : ''}
+                    ${fechaPublicacionInfo}
+                    ${fechaInfo}
+                </div>
+                <div class="review-status">
+                    <span class="status-number">${data.entregas || 0}</span>
+                    <span class="status-label">Entregas</span>
+                    <a href="#" class="btn-review" onclick="revisarTarea(${data.taskId})">Revisar</a>
+                    <button class="btn-delete-task" data-task-id="${data.taskId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            reviewList.appendChild(item);
+        }
+
+        async function eliminarTareaDelBackend(taskId) {
+            // NOTA: Necesitarías implementar un endpoint DELETE en tu backend NestJS
+            // Por ahora simulamos la eliminación
+            console.log('🗑️ Eliminando tarea ID:', taskId);
+            
+            // Simular llamada API (reemplaza con tu endpoint real)
+            // await window.apiService.eliminarTarea(taskId);
+            
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(), 500);
+            });
+        }
+
+        function cargarInformacionUsuario() {
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                
+                if (usuario.nombre) {
+                    userNameElement.textContent = usuario.nombre;
+                    
+                    // Generar iniciales para el avatar
+                    const iniciales = usuario.nombre
+                        .split(' ')
+                        .map(p => p[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                    
+                    userAvatarElement.textContent = iniciales;
+                } else {
+                    userNameElement.textContent = 'Docente';
+                    userAvatarElement.textContent = 'D';
+                }
+            } catch (error) {
+                console.error('Error cargando información del usuario:', error);
+                userNameElement.textContent = 'Docente';
+                userAvatarElement.textContent = 'D';
+            }
+        }
+
+        function obtenerNombreCurso(idCurso) {
+            const cursos = {
+                1: 'Inteligencia Artificial',
+                2: 'Redes y Conectividad'
+            };
+            return cursos[idCurso] || `Curso ${idCurso}`;
+        }
+
+        // ====================================================================
+        // === FUNCIONES DE UI ===
+        // ====================================================================
+        
+        function mostrarEstadoCarga(mensaje) {
+            reviewList.innerHTML = `
+                <li class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> ${mensaje}
+                </li>
+            `;
+        }
+
+        function mostrarMensajeVacio() {
+            reviewList.innerHTML = `
+                <li class="review-item" style="justify-content: center; color: #777;">
+                    <i class="fas fa-inbox"></i> No hay tareas pendientes de revisión.
+                </li>
+            `;
+        }
+
+        function mostrarMensajeLimpieza() {
+            cleanupMessage.innerHTML = `
+                <div class="notification-bar">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    No se pudieron cargar las tareas del servidor.
+                    <button class="btn-limpiar" onclick="recargarTareas()">Reintentar</button>
+                </div>
+            `;
+        }
+
+        function ocultarMensajeLimpieza() {
+            cleanupMessage.innerHTML = '';
+        }
+
+        function mostrarMensajeEstado(mensaje, tipo) {
+            statusMessage.innerHTML = `
+                <div class="${tipo === 'success' ? 'notification-bar' : 'error-message'}" style="background-color: ${tipo === 'success' ? '#e6f7e6' : '#ffe6e6'}; color: ${tipo === 'success' ? '#27ae60' : '#d63031'};">
+                    ${mensaje}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                statusMessage.innerHTML = '';
+            }, 3000);
+        }
+
+        function cargarTareasLocales() {
+            const tareasGuardadas = JSON.parse(localStorage.getItem('tareasDocente') || '[]');
+            
+            if (tareasGuardadas.length > 0) {
+                mostrarTareas(tareasGuardadas);
+                mostrarMensajeEstado('⚠️ Usando datos locales almacenados', 'warning');
+            } else {
+                mostrarMensajeVacio();
+                mostrarMensajeLimpieza();
+            }
+        }
+
+        // ====================================================================
+        // === LÓGICA DEL MENÚ DESPLEGABLE ===
+        // ====================================================================
+        
+        const avatarToggle = document.getElementById('user-avatar-toggle');
+        const userMenu = document.getElementById('user-menu-dropdown');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (avatarToggle && userMenu && logoutBtn) {
+            avatarToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenu.classList.toggle('show');
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('usuario');
+                window.location.href = 'login.html';
+            });
+        }
+
+        window.addEventListener('click', (e) => {
+            if (userMenu && userMenu.classList.contains('show')) {
+                if (!avatarToggle.contains(e.target) && !userMenu.contains(e.target)) {
+                    userMenu.classList.remove('show');
+                }
+            }
+        });
+
+    });
+
+    // Funciones globales para los botones
+    function revisarTarea(taskId) {
+        alert(`Función de revisión para tarea ID: ${taskId}`);
+        // Aquí puedes redirigir a la página de revisión o abrir un modal
+    }
+
+    async function recargarTareas() {
+        await cargarTareasDelBackend();
+    }
+</script>
+</body>
+</html>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Iniciar Sesión - Pub/Sub Educativo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>🎓 Sistema Educativo Pub/Sub</h1>
+    <p>Inicia sesión para continuar</p>
+
+    <input type="email" id="email" placeholder="Correo electrónico" value="lesly@educa.com">
+    <input type="password" id="password" placeholder="Contraseña" value="12345">
+    <button id="btnLogin">Ingresar</button>
+
+    <div id="loginStatus" style="margin-top: 15px;"></div>
+
+    
+    <!-- Botón para probar conexión -->
+    <button id="btnTestConnection" style="background: white; margin-top: 10px;">Ingresar</button>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/"></script>
+  <script>
+    // Función para mostrar estados
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById("loginStatus");
+        if (statusDiv) {
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status-${type}`;
+            statusDiv.style.display = "block";
+            statusDiv.style.padding = "10px";
+            statusDiv.style.borderRadius = "5px";
+            statusDiv.style.marginTop = "15px";
+            
+            if (type === "error") {
+                statusDiv.style.backgroundColor = "#ffe6e6";
+                statusDiv.style.color = "#d63031";
+                statusDiv.style.border = "1px solid #ff7675";
+            } else if (type === "success") {
+                statusDiv.style.backgroundColor = "#e6f7e6";
+                statusDiv.style.color = "#27ae60";
+                statusDiv.style.border = "1px solid #2ecc71";
+            } else if (type === "loading") {
+                statusDiv.style.backgroundColor = "#e6f3ff";
+                statusDiv.style.color = "#2980b9";
+                statusDiv.style.border = "1px solid #3498db";
+            }
+        }
+    }
+
+    // Probar conexión al backend
+    document.getElementById("btnTestConnection").addEventListener("click", async () => {
+        try {
+            showStatus("🔍 Probando conexión al backend...", "loading");
+            
+            const response = await fetch('http://localhost:3002/api/v1/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correo: 'lesly@educa.com',
+                    contrasena: '12345'
+                })
+            });
+            
+            console.log('🔍 Test Connection Status:', response.status);
+            const data = await response.json();
+            console.log('🔍 Test Connection Response:', data);
+            
+            if (response.ok) {
+                showStatus(`✅ Conexión exitosa! Backend respondió correctamente.`, "success");
+            } else {
+                showStatus(`❌ Backend respondió con error: ${response.status}`, "error");
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en test de conexión:', error);
+            showStatus(`❌ No se pudo conectar al backend: ${error.message}`, "error");
+        }
+    });
+
+    // En login.html - REEMPLAZA todo el script actual
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        console.log("🔐 Intentando login con:", email);
+
+        if (!email || !password) {
+            showStatus("Por favor completa todos los campos", "error");
+            return;
+        }
+
+        try {
+            showStatus("Conectando...", "loading");
+            
+            // Usar el endpoint CORRECTO de NestJS
+            const response = await fetch('http://localhost:3002/api/v1/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correo: email,
+                    contrasena: password
+                })
+            });
+
+            console.log('🔍 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Credenciales incorrectas');
+            }
+
+            const data = await response.json();
+            console.log("✅ Login exitoso:", data);
+            
+            // Guardar información del usuario en localStorage
+            const usuario = {
+                id: data.id_usuario,
+                nombre: data.nombre,
+                rol: data.rol,
+                correo: data.correo || email
+            };
+            
+            localStorage.setItem('usuario', JSON.stringify(usuario));
+            console.log('💾 Usuario guardado en localStorage:', usuario);
+
+            showStatus("✅ Login exitoso! Redirigiendo...", "success");
+
+            // Redirigir según el rol
+            setTimeout(() => {
+                if (data.rol.toLowerCase() === "docente") {
+                    window.location.href = "docente.html";
+                } else {
+                    window.location.href = "estudiante.html";
+                }
+            }, 1000);
+
+        } catch (error) {
+            console.error("❌ Error en login:", error);
+            showStatus(`❌ Error: ${error.message}`, "error");
+        }
+    });
+
+    // El resto del código de testConnection se mantiene igual
+
+    // Permitir login con Enter
+    document.getElementById("password").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            document.getElementById("btnLogin").click();
+        }
+    });
+
+    // Verificar que los scripts se cargaron
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("🔧 DOM cargado");
+        console.log("🔧 APP_CONFIG:", window.APP_CONFIG);
+        console.log("🔧 apiService:", typeof window.apiService);
+        
+        if (typeof window.apiService === 'undefined') {
+            showStatus("⚠️ Error: Los archivos JavaScript no se cargaron correctamente", "error");
+        }
+    });
+  </script>
+</body>
+</html>
